@@ -1,18 +1,47 @@
-// src/components/PrivateRoute.js
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Route, Redirect } from "react-router-dom";
-
+import axios from 'axios';
+import apiConfig from '../apiConfig.json'
 // Tạo PrivateRoute bảo vệ route dựa trên quyền
 const PrivateRoute = ({ component: Component, rolesAllowed, ...rest }) => {
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const role = localStorage.getItem("role"); // Lấy role người dùng từ localStorage
-    const isLoggedIn = localStorage.getItem("accessToken"); // Kiểm tra người dùng đã đăng nhập chưa
+    const accessToken = localStorage.getItem("accessToken"); // Kiểm tra người dùng đã đăng nhập chưa
+
+    useEffect(() => {
+        // Kiểm tra Access Token bằng cách gọi API xác thực token
+        const checkTokenValidity = async () => {
+            if (accessToken) {
+                try {
+                    const response = await axios.post(`${apiConfig.API_BASE_URL}/api/auth/verify-token`, { token: accessToken });
+                    if (response.status === 200) {
+                        setIsAuthenticated(true); // Token hợp lệ
+                    } else {
+                        setIsAuthenticated(false); // Token không hợp lệ
+                        console.log(response.data.message);
+                    }
+                } catch (error) {
+                    setIsAuthenticated(false); // Nếu có lỗi khi xác thực token (ví dụ hết hạn)
+                }
+            } else {
+                setIsAuthenticated(false); // Nếu không có token
+            }
+            setIsLoading(false);
+        };
+
+        checkTokenValidity();
+    }, [accessToken]);
+
+    if (isLoading) {
+        return <div>Loading...</div>; // Hiển thị loading khi đang kiểm tra token
+    }
 
     return (
         <Route
             {...rest}
             render={(props) =>
-                isLoggedIn ? (
-                    // Kiểm tra role của người dùng có nằm trong rolesAllowed không
+                isAuthenticated ? (
                     rolesAllowed.includes(role) ? (
                         <Component {...props} /> // Nếu đúng quyền yêu cầu, render component
                     ) : (
@@ -20,15 +49,15 @@ const PrivateRoute = ({ component: Component, rolesAllowed, ...rest }) => {
                         <Redirect
                             to={
                                 role === "admin"
-                                    ? "/" // Chuyển hướng admin đến dashboard admin
+                                    ? "/"
                                     : role === "user"
-                                        ? "/" // Chuyển hướng staff đến dashboard staff
-                                        : "/" // Chuyển hướng customer đến dashboard customer
+                                        ? "/"
+                                        : "/"
                             }
                         />
                     )
                 ) : (
-                    // Nếu chưa đăng nhập, chuyển hướng đến trang đăng nhập
+                    // Nếu chưa đăng nhập hoặc token không hợp lệ, chuyển hướng đến trang đăng nhập
                     <Redirect to="/" />
                 )
             }

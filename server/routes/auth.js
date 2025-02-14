@@ -89,7 +89,7 @@ router.post('/register', async (req, res) => {
 // @desc Login user
 // @access Public
 router.post('/login', async (req, res) => {
-	const { username, password, uuid } = req.body;
+	const { username, password } = req.body;
 
 	// Simple validation
 	if (!username || !password)
@@ -112,26 +112,11 @@ router.post('/login', async (req, res) => {
 		if (!passwordValid)
 			return res.status(400).json({ success: false, message: 'Incorrect username or password' });
 
-		// Check UUID logic
-		console.log(uuid)
-		if (!user.uuid) {
-			// If user.uuid is null, update with the new uuid
-			await pool.request()
-				.input('UUID', uuid)
-				.input('Username', username)
-				.query('UPDATE Users SET uuid = @UUID WHERE username = @Username');
-
-			// Proceed to login
-		} else if (user.uuid !== uuid) {
-			// If user.uuid exists and doesn't match the provided uuid, deny login
-			return res.status(403).json({ success: false, message: 'This account is locked to another device.' });
-		}
-
 		// Create JWT token with user role included
 		const accessToken = jwt.sign(
 			{ userId: user.id, role: user.role }, // Add role to JWT payload
 			process.env.ACCESS_TOKEN_SECRET,
-			{ expiresIn: '1h' } // Optional: Set token expiration time
+			{ expiresIn: '6h' } // Optional: Set token expiration time
 		);
 		res.json({
 			success: true,
@@ -170,4 +155,19 @@ router.post('/resetUUID', async (req, res) => {
 		res.status(500).json({ success: false, message: 'Internal server error' });
 	}
 });
+
+router.post('/verify-token', (req, res) => {
+	const { token } = req.body;
+	if (!token) {
+		return res.status(401).json({ success: false, message: 'Token is required' });
+	}
+
+	jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+		if (err) {
+			return res.status(401).json({ success: false, message: 'Token is invalid or expired' });
+		}
+		res.status(200).json({ success: true, message: 'Token is valid' });
+	});
+});
 module.exports = router
+
