@@ -6,11 +6,16 @@ import { Link, useHistory } from "react-router-dom";
 import axios from "axios";
 import 'antd/dist/reset.css';
 import "./Qr.css";
+import apiConfig from '../apiConfig.json'
+import * as XLSX from 'xlsx';
+import domtoimage from 'dom-to-image';
+import { createRoot } from "react-dom/client";
 
-const API_URL = "http://localhost:5000/b2/thietbi";
-const API_ADD_DEVICE = "http://localhost:5000/b2/insertthietbi"; // API thêm thiết bị mới
-const API_UPDATE_RESULT = "http://localhost:5000/b2/capnhatketquakiemtra"; // API cập nhật kết quả kiểm tra
-const API_DELETE_DEVICE = "http://localhost:5000/b2/deletethietbi"; // API xóa thiết bị
+
+const API_URL = `${apiConfig.API_BASE_URL}/b2/thietbi`;
+const API_ADD_DEVICE = `${apiConfig.API_BASE_URL}/b2/insertthietbi`; // API thêm thiết bị mới
+const API_UPDATE_RESULT = `${apiConfig.API_BASE_URL}/b2/capnhatketquakiemtra`; // API cập nhật kết quả kiểm tra
+const API_DELETE_DEVICE = `${apiConfig.API_BASE_URL}/b2/deletethietbi`; // API xóa thiết bị
 
 function Qr() {
     const [devices, setDevices] = useState([]);
@@ -27,6 +32,36 @@ function Qr() {
     const { Option } = Select;
 
     const history = useHistory();
+
+
+    const exportToExcel = async (devices) => {
+        const wb = XLSX.utils.book_new();
+        const wsData = [];
+
+        for (const device of devices) {
+            const qrCanvas = document.createElement('canvas');
+            const qrCode = document.createElement('div');
+
+            document.body.appendChild(qrCode);
+            const root = createRoot(qrCode);
+            root.render(<QRCodeCanvas value={generateQRCode(device)} size={64} />);
+
+
+            const qrImage = await domtoimage.toPng(qrCode);
+            document.body.removeChild(qrCode);
+            console.log(qrImage);
+            wsData.push([
+                device.LoaiPhuongTien,
+                device.ViTri,
+                { t: "s", v: qrImage } // Lưu chuỗi base64 trực tiếp, không phải hyperlink
+            ]);
+            // wsData.push([device.LoaiPhuongTien, device.ViTri, { t: 's', v: '', l: { Target: qrImage } }]);
+        }
+
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        XLSX.utils.book_append_sheet(wb, ws, 'DanhSachThietBi');
+        XLSX.writeFile(wb, 'DanhSachThietBi.xlsx');
+    };
 
     const handleLogout = () => {
         localStorage.removeItem('role');
@@ -351,6 +386,9 @@ function Qr() {
                 open={showDeviceList}
                 onCancel={() => setShowDeviceList(false)}
                 footer={[
+                    <Button key="export" onClick={() => exportToExcel(devices)}>
+                        Xuất Excel
+                    </Button>,
                     <Button key="close" onClick={() => setShowDeviceList(false)}>Đóng</Button>,
                     <Button key="addDevice" type="primary" onClick={() => setAddDeviceModalVisible(true)}>
                         Thêm Thiết Bị

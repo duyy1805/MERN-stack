@@ -5,13 +5,19 @@
   "dependencies": {
     "antd": "^5.24.0",
     "axios": "^1.7.9",
+    "canvas-toBlob": "^1.0.0",
     "cra-template": "1.2.0",
+    "dom-to-image": "^2.6.0",
+    "file-saver": "^2.0.5",
     "html5-qrcode": "^2.3.8",
+    "qrcode": "^1.5.4",
     "qrcode.react": "^4.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^5.3.4",
-    "react-scripts": "5.0.1"
+    "react-scripts": "5.0.1",
+    "xlsx": "^0.18.5",
+    "xlsx-populate": "^1.21.0"
   },
   "scripts": {
     "start": "react-scripts start",
