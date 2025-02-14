@@ -4,6 +4,7 @@ const config = {
     database: process.env.DB_DATABASE,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
+    port: parseInt(process.env.DB_PORT, 10),
     options: {
         encrypt: true, // Nếu sử dụng Azure, cần bật
         trustedConnection: process.env.DB_TRUSTED_CONNECTION === 'true',

@@ -5,6 +5,7 @@ require('dotenv').config();
 const { poolPromise } = require('./db');
 
 const authRouter = require('./routes/auth')
+const b2Router = require('./routes/b2')
 
 const app = express();
 app.use(express.json());
@@ -13,6 +14,8 @@ app.use(cors());
 // Định nghĩa route
 
 app.use('/api/auth', authRouter)
+app.use('/b2', b2Router)
+
 
 // Lắng nghe kết nối
 const PORT = process.env.PORT || 5000;

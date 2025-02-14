@@ -133,7 +133,6 @@ router.post('/login', async (req, res) => {
 			process.env.ACCESS_TOKEN_SECRET,
 			{ expiresIn: '1h' } // Optional: Set token expiration time
 		);
-
 		res.json({
 			success: true,
 			message: 'User logged in successfully',
@@ -146,4 +145,29 @@ router.post('/login', async (req, res) => {
 	}
 });
 
+router.post('/resetUUID', async (req, res) => {
+	const { username } = req.body;
+	try {
+		const pool = await poolPromise;
+		const result = await pool.request()
+			.input('Username', username)
+			.query('SELECT * FROM Users WHERE username = @Username');
+		console.log(result)
+		const user = result.recordset[0];
+		if (!user)
+			return res.status(400).json({ success: false, message: 'Incorrect username or password' });
+		// Check for existing user
+		await pool.request()
+			.input('Username', username)
+			.query('update Users SET uuid = NULL WHERE username = @Username');
+
+		res.json({
+			success: true,
+			message: 'User can login on new device',
+		});
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ success: false, message: 'Internal server error' });
+	}
+});
 module.exports = router

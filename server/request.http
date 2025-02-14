@@ -24,3 +24,11 @@ Content-Type: application/json
   "username": "DiemLinhCo",
   "password": "DLC"
 }
+
+###
+POST http://localhost:5000/api/auth/resetUUID
+Content-Type: application/json
+
+{
+  "username": "DiemLinhCo"
+}
