@@ -11,7 +11,6 @@ import * as XLSX from 'xlsx';
 import domtoimage from 'dom-to-image';
 import { createRoot } from "react-dom/client";
 
-
 const API_URL = `${apiConfig.API_BASE_URL}/b2/thietbi`;
 const API_ADD_DEVICE = `${apiConfig.API_BASE_URL}/b2/insertthietbi`; // API thêm thiết bị mới
 const API_UPDATE_RESULT = `${apiConfig.API_BASE_URL}/b2/capnhatketquakiemtra`; // API cập nhật kết quả kiểm tra
