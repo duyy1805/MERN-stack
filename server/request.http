@@ -7,26 +7,26 @@ GET http://localhost:5000/api/auth/users
 
 ###
 
-POST http://localhost:5000/api/auth/register
+POST http://localhost:5000/auth/register
 Content-Type: application/json
 
 {
-  "username": "DiemLinhCo",
-  "password": "DLC"
+  "username": "hoanpd",
+  "password": "admin"
 }
 
 ###
 
-POST http://localhost:5000/api/auth/login
+POST http://localhost:5000/auth/login
 Content-Type: application/json
 
 {
-  "username": "DiemLinhCo",
-  "password": "DLC"
+  "username": "hoanpd",
+  "password": "admin"
 }
 
 ###
-POST http://localhost:5000/api/auth/resetUUID
+POST http://localhost:5000/auth/resetUUID
 Content-Type: application/json
 
 {

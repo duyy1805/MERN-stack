@@ -7,10 +7,6 @@ const { poolPromise } = require('../db');
 const sql = require('mssql');
 
 router.get('/thietbi', async (req, res) => {
-    const TenNha = req.query.TenNha;
-    const ID_Kho = parseInt(req.query.ID_Kho);
-    const MaVung = req.query.MaVung;
-
     try {
         // Sử dụng kết nối được khởi tạo
         const pool = await poolPromise;

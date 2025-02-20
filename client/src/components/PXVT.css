@@ -1,0 +1,88 @@
+/* Đặt margin và padding cho toàn bộ trang */
+.PXVT {
+    padding: 20px;
+}
+
+/* Định dạng tiêu đề */
+.PXVT h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.PXVT .ant-tabs-content-holder {
+    width: 100%;
+}
+
+.PXVT input {
+    font-size: 16px;
+}
+
+.PXVT .ant-table {
+    max-width: 98vw;
+}
+
+/* Style cho các input và button trên màn hình lớn */
+.PXVT .ant-input,
+.PXVT .ant-btn {
+    width: 200px;
+    margin-right: 10px;
+}
+
+/* Style cho phần nhập liệu, để chúng nằm ngang */
+.PXVT>div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.button-group {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+/* Khi màn hình nhỏ, sửa kiểu hiển thị */
+@media (max-width: 768px) {
+    .PXVT>div {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .PXVT .ant-picker {
+        width: 100%;
+    }
+
+    .PXVT .ant-table {
+        max-width: 768px;
+    }
+
+    .PXVT .ant-input,
+    .PXVT .ant-btn {
+        width: 100%;
+        /* Đặt chiều rộng của các input và button thành 100% */
+        margin-bottom: 10px;
+        /* Khoảng cách giữa các input và button */
+    }
+
+    /* Sửa lại padding cho bảng */
+    .ant-table {
+        font-size: 12px;
+    }
+}
+
+/* Responsive cho Table */
+@media (max-width: 768px) {
+    .ant-table-thead>tr>th {
+        font-size: 14px;
+        /* Giảm kích thước font của header */
+    }
+
+    .ant-table-cell {
+        padding: 8px;
+        /* Giảm padding để tiết kiệm không gian */
+        font-size: 12px;
+        /* Giảm kích thước font cho cell */
+    }
+}

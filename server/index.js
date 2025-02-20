@@ -13,7 +13,7 @@ app.use(cors());
 
 // Định nghĩa route
 
-app.use('/api/auth', authRouter)
+app.use('/auth', authRouter)
 app.use('/b2', b2Router)
 
 

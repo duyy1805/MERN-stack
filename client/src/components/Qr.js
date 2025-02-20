@@ -25,7 +25,6 @@ function Qr() {
     const [addDeviceModalVisible, setAddDeviceModalVisible] = useState(false); // Trạng thái modal thêm thiết bị
     const [newDevice, setNewDevice] = useState({ LoaiPhuongTien: "", ViTri: "", TanSuat: "" }); // Thêm tần suất vào state
     const scannerRef = useRef(null);
-
     const [messageApi, contextHolder] = message.useMessage();
     const [form] = Form.useForm();
     const { Option } = Select;
@@ -186,6 +185,7 @@ function Qr() {
     // Hàm xóa thiết bị
     const handleDeleteDevice = async (IDThietBi) => {
         try {
+            console.log(IDThietBi);
             await axios.post(API_DELETE_DEVICE, { IDThietBi });
             messageApi.open({
                 type: 'success',
@@ -205,35 +205,42 @@ function Qr() {
     // Cột bảng hiển thị nội dung kiểm tra
     const columns = [
         {
-            title: "Nội Dung Kiểm Tra",
+            title: (
+                <Tooltip title="Nội dung kiểm tra thiết bị">
+                    <div style={{
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        maxWidth: 100, // Điều chỉnh độ rộng tối đa
+                    }}>
+                        Nội Dung Kiểm Tra
+                    </div>
+                </Tooltip>
+            ),
             dataIndex: "NoiDungKiemTra",
             key: "NoiDungKiemTra",
+            width: "15%",
+            render: (text) => <Tooltip placement="topLeft" title={text}>{text}</Tooltip>,
         },
         {
-            title: "Kết Quả",
+            title: (
+                <Tooltip title="Kết quả kiểm tra thiết bị">
+                    Kết Quả
+                </Tooltip>
+            ),
             dataIndex: "KetQua",
             key: "KetQua",
+            width: "1%",
             render: (text) => (
-                text ? <Tag color={text === "Đạt" ? "green" : "red"}>{text}</Tag> : <Tag color="gray">Chưa kiểm tra</Tag>
+                text ? <Tag color={text === "Đạt" ? "green" : text === 'Không đạt' ? 'red' : "yellow"}>{text}</Tag> : <Tag color="gray">Chưa kiểm tra</Tag>
             )
         },
         {
-            title: "Số lần kiểm tra đạt trong tháng",
-            dataIndex: "SoLanKiemTraDat",
-            key: "SoLanKiemTraDat",
-            align: "center",
-        },
-        {
-            title: "Thời Gian Kiểm Tra",
-            dataIndex: "ThoiGianKiemTra",
-            key: "ThoiGianKiemTra",
-            render: (text) =>
-                text
-                    ? new Date(text).toISOString().replace("T", " ").replace("Z", "").split(".")[0]
-                    : "-"
-        },
-        {
-            title: "Thao Tác",
+            title: (
+                <Tooltip title="Các thao tác đánh giá kết quả">
+                    Thao Tác
+                </Tooltip>
+            ),
             key: "action",
             render: (text, record) => (
                 <div>
@@ -241,15 +248,13 @@ function Qr() {
                         type="primary"
                         onClick={() => {
                             updateTestResult(record.IDNoiDungKiemTra, "Đạt");
-                            // Cập nhật lại kết quả và thời gian trong bảng
                             const updatedDevice = selectedDevice.map(d =>
                                 d.NoiDungKiemTra === record.NoiDungKiemTra
-                                    ? { ...d, KetQua: "Đạt", ThoiGianKiemTra: new Date().toISOString().replace("T", " ").replace("Z", "").split(".")[0] }
+                                    ? { ...d, KetQua: "Đạt", ThoiGianKiemTra: new Date().toISOString().replace("T", " ").replace("Z", "").split(".")[0], SoLanKiemTraDat: d.SoLanKiemTraDat + 1 }
                                     : d
                             );
                             setSelectedDevice(updatedDevice);
                         }}
-                    // disabled={record.KetQua === "Đạt"}
                     >
                         Đạt
                     </Button>
@@ -259,7 +264,6 @@ function Qr() {
                         style={{ marginLeft: 8 }}
                         onClick={() => {
                             updateTestResult(record.IDNoiDungKiemTra, "Không đạt");
-                            // Cập nhật lại kết quả và thời gian trong bảng
                             const updatedDevice = selectedDevice.map(d =>
                                 d.NoiDungKiemTra === record.NoiDungKiemTra
                                     ? { ...d, KetQua: "Không đạt", ThoiGianKiemTra: new Date().toISOString().replace("T", " ").replace("Z", "").split(".")[0] }
@@ -267,13 +271,38 @@ function Qr() {
                             );
                             setSelectedDevice(updatedDevice);
                         }}
-                    // disabled={record.KetQua === "Không đạt"}
                     >
                         Không đạt
                     </Button>
                 </div>
             )
-        }
+        },
+        {
+            title: (
+                <Tooltip title="Số lần kiểm tra đạt trong tháng">
+                    <span style={{ display: "inline-block", maxWidth: 80, whiteSpace: "normal", textAlign: "center" }}>
+                        Số lần đạt
+                    </span>
+                </Tooltip>
+            ),
+            dataIndex: "SoLanKiemTraDat",
+            key: "SoLanKiemTraDat",
+            align: "center",
+            render: (text) => <Tooltip placement="topLeft" title={text}>{text}</Tooltip>,
+        },
+        {
+            title: (
+                <Tooltip title="Thời gian kiểm tra gần nhất">
+                    Thời Gian Kiểm Tra
+                </Tooltip>
+            ),
+            dataIndex: "ThoiGianKiemTra",
+            key: "ThoiGianKiemTra",
+            render: (text) =>
+                text
+                    ? new Date(text).toISOString().replace("T", " ").replace("Z", "").split(".")[0]
+                    : "-"
+        },
     ];
 
     // Tạo bộ lọc cho cột Loại Phương Tiện
@@ -384,6 +413,7 @@ function Qr() {
                 title="Danh Sách Thiết Bị"
                 open={showDeviceList}
                 onCancel={() => setShowDeviceList(false)}
+                width={window.innerWidth < 768 ? "100%" : "60%"}
                 footer={[
                     <Button key="export" onClick={() => exportToExcel(devices)}>
                         Xuất Excel
@@ -394,24 +424,25 @@ function Qr() {
                     </Button>
                 ]}
             >
-                {/* <div style={{ overflowX: 'auto', }}> */}
-                <Table
-                    dataSource={Array.from(new Set(devices.map(d => d.MaThietBi))).map((MaThietBi) => {
-                        const deviceGroup = devices.find(d => d.MaThietBi === MaThietBi);
-                        return {
-                            key: MaThietBi,
-                            IDThietBi: deviceGroup?.IDThietBi,
-                            MaThietBi: MaThietBi,
-                            LoaiPhuongTien: deviceGroup?.LoaiPhuongTien,
-                            ViTri: deviceGroup?.ViTri,
-                            QRCode: deviceGroup
-                        };
-                    })}
-                    columns={columns_}
-                    pagination={false}
-                    scroll={{ x: 'max-content', y: 500 }}
-                />
-                {/* </div> */}
+                <div style={{ overflowX: 'auto', }}>
+                    <Table
+                        dataSource={Array.from(new Set(devices.map(d => d.MaThietBi))).map((MaThietBi) => {
+                            const deviceGroup = devices.find(d => d.MaThietBi === MaThietBi);
+                            return {
+                                key: MaThietBi,
+                                IDThietBi: deviceGroup?.IDThietBi,
+                                MaThietBi: MaThietBi,
+                                LoaiPhuongTien: deviceGroup?.LoaiPhuongTien,
+                                ViTri: deviceGroup?.ViTri,
+                                QRCode: deviceGroup
+                            };
+                        })}
+                        // style={{ width: 1000 }}
+                        columns={columns_}
+                        pagination={false}
+                        scroll={{ x: 'max-content', y: 500 }}
+                    />
+                </div>
             </Modal>
 
             <Modal
@@ -457,7 +488,7 @@ function Qr() {
 
                     <Form.Item
                         label="Tần Suất"
-                        name="TanSuat"
+                        name="TanSuatKiemTra"
                         rules={[{ required: true, message: "Vui lòng nhập tần suất" }]}
                     >
                         <Input placeholder="Nhập tần suất" />
@@ -477,7 +508,7 @@ function Qr() {
                 title="Thông Tin Kiểm Tra"
                 open={modalVisible}
                 onCancel={() => setModalVisible(false)}
-                width={window.innerWidth < 768 ? "90%" : "60%"} // 90% màn hình trên mobile
+                width={window.innerWidth < 768 ? "100%" : "60%"}
                 footer={[<Button key="close" onClick={() => setModalVisible(false)}>Đóng</Button>]}
             >
                 {selectedDevice && (
@@ -488,6 +519,7 @@ function Qr() {
                             columns={columns}
                             rowKey="NoiDungKiemTra"
                             pagination={false}
+                            scroll={{ x: 'max-content', y: 500 }}
                         />
                     </div>
                 )}

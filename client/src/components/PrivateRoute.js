@@ -14,7 +14,7 @@ const PrivateRoute = ({ component: Component, rolesAllowed, ...rest }) => {
         const checkTokenValidity = async () => {
             if (accessToken) {
                 try {
-                    const response = await axios.post(`${apiConfig.API_BASE_URL}/api/auth/verify-token`, { token: accessToken });
+                    const response = await axios.post(`${apiConfig.API_BASE_URL}/auth/verify-token`, { token: accessToken });
                     if (response.status === 200) {
                         setIsAuthenticated(true); // Token hợp lệ
                     } else {
@@ -49,7 +49,7 @@ const PrivateRoute = ({ component: Component, rolesAllowed, ...rest }) => {
                         <Redirect
                             to={
                                 role === "admin"
-                                    ? "/"
+                                    ? "/pxvt"
                                     : role === "user"
                                         ? "/"
                                         : "/"

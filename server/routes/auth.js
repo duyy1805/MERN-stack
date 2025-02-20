@@ -130,6 +130,63 @@ router.post('/login', async (req, res) => {
 	}
 });
 
+router.post('/login-uuid', async (req, res) => {
+	const { username, password, uuid } = req.body;
+
+	// Simple validation
+	if (!username || !password)
+		return res.status(400).json({ success: false, message: 'Missing username and/or password' });
+
+	try {
+		const pool = await poolPromise;
+
+		// Check for existing user
+		const result = await pool.request()
+			.input('Username', username)
+			.query('SELECT * FROM Users WHERE username = @Username');
+
+		const user = result.recordset[0];
+		if (!user)
+			return res.status(400).json({ success: false, message: 'Incorrect username or password' });
+
+		// Username found
+		const passwordValid = await argon2.verify(user.password, password);
+		if (!passwordValid)
+			return res.status(400).json({ success: false, message: 'Incorrect username or password' });
+
+		// Check UUID logic
+		console.log(uuid)
+		if (!user.uuid) {
+			// If user.uuid is null, update with the new uuid
+			await pool.request()
+				.input('UUID', uuid)
+				.input('Username', username)
+				.query('UPDATE Users SET uuid = @UUID WHERE username = @Username');
+
+			// Proceed to login
+		} else if (user.uuid !== uuid) {
+			// If user.uuid exists and doesn't match the provided uuid, deny login
+			return res.status(403).json({ success: false, message: 'This account is locked to another device.' });
+		}
+
+		// Create JWT token with user role included
+		const accessToken = jwt.sign(
+			{ userId: user.id, role: user.role }, // Add role to JWT payload
+			process.env.ACCESS_TOKEN_SECRET,
+			{ expiresIn: '6h' } // Optional: Set token expiration time
+		);
+
+		res.json({
+			success: true,
+			message: 'User logged in successfully',
+			accessToken,
+			role: user.role // Return the user's role as part of the response
+		});
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ success: false, message: 'Internal server error' });
+	}
+});
 router.post('/resetUUID', async (req, res) => {
 	const { username } = req.body;
 	try {

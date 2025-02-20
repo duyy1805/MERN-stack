@@ -4,6 +4,9 @@ import { Link, useHistory } from "react-router-dom";
 import "./Style.css";
 import axios from "axios";
 import apiConfig from '../apiConfig.json'
+import { v4 as uuidv4 } from 'uuid';
+
+
 const { Title } = Typography;
 const { Content } = Layout;
 
@@ -11,15 +14,24 @@ const SignIn = () => {
     const [messageApi, contextHolder] = message.useMessage();  // Use message API
 
     const history = useHistory(); // Initialize history
-
+    const getDeviceId = () => {
+        let deviceId = localStorage.getItem('deviceId');
+        if (!deviceId) {
+            deviceId = uuidv4();  // Tạo UUID mới nếu chưa có
+            localStorage.setItem('deviceId', deviceId);
+        }
+        return deviceId;
+    };
     const onFinish = async (values) => {
         console.log("Success:", values);
+        const uuid = getDeviceId()
         const { email, password } = values;
 
         try {
-            const response = await axios.post(`${apiConfig.API_BASE_URL}/api/auth/login`, {
+            const response = await axios.post(`${apiConfig.API_BASE_URL}/auth/login-uuid`, {
                 username: email, // API may require `username` instead of `email`
-                password
+                password,
+                uuid
             });
 
             if (response.status === 200) { // Check response from server
@@ -42,6 +54,7 @@ const SignIn = () => {
                 });
             }
         } catch (error) {
+            console.log("Error:", error);
             messageApi.open({ // Corrected message API usage
                 type: 'error',
                 content: error.response?.data?.message || "Something went wrong, please try again.",
