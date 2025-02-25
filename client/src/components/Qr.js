@@ -10,6 +10,7 @@ import apiConfig from '../apiConfig.json'
 import * as XLSX from 'xlsx';
 import domtoimage from 'dom-to-image';
 import { createRoot } from "react-dom/client";
+import moment from "moment";
 
 const API_URL = `${apiConfig.API_BASE_URL}/b2/thietbi`;
 const API_ADD_DEVICE = `${apiConfig.API_BASE_URL}/b2/insertthietbi`; // API thêm thiết bị mới
@@ -250,7 +251,7 @@ function Qr() {
                             updateTestResult(record.IDNoiDungKiemTra, "Đạt");
                             const updatedDevice = selectedDevice.map(d =>
                                 d.NoiDungKiemTra === record.NoiDungKiemTra
-                                    ? { ...d, KetQua: "Đạt", ThoiGianKiemTra: new Date().toISOString().replace("T", " ").replace("Z", "").split(".")[0], SoLanKiemTraDat: d.SoLanKiemTraDat + 1 }
+                                    ? { ...d, KetQua: "Đạt", ThoiGianKiemTra: moment().format("YYYY-MM-DD HH:mm:ss"), SoLanKiemTraDat: d.SoLanKiemTraDat + 1 }
                                     : d
                             );
                             setSelectedDevice(updatedDevice);
@@ -266,7 +267,7 @@ function Qr() {
                             updateTestResult(record.IDNoiDungKiemTra, "Không đạt");
                             const updatedDevice = selectedDevice.map(d =>
                                 d.NoiDungKiemTra === record.NoiDungKiemTra
-                                    ? { ...d, KetQua: "Không đạt", ThoiGianKiemTra: new Date().toISOString().replace("T", " ").replace("Z", "").split(".")[0] }
+                                    ? { ...d, KetQua: "Không đạt", ThoiGianKiemTra: moment().format("YYYY-MM-DD HH:mm:ss") }
                                     : d
                             );
                             setSelectedDevice(updatedDevice);
@@ -279,8 +280,26 @@ function Qr() {
         },
         {
             title: (
+                <Tooltip title="Hướng dẫn kiểm tra thiết bị">
+                    <div style={{
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        maxWidth: 100, // Điều chỉnh độ rộng tối đa
+                    }}>
+                        Hướng dẫn kiểm tra
+                    </div>
+                </Tooltip>
+            ),
+            dataIndex: "HuongDanKiemTra",
+            key: "HuongDanKiemTra",
+            width: "15%",
+            render: (text) => <Tooltip placement="topLeft" title={text}>{text}</Tooltip>,
+        },
+        {
+            title: (
                 <Tooltip title="Số lần kiểm tra đạt trong tháng">
-                    <span style={{ display: "inline-block", maxWidth: 80, whiteSpace: "normal", textAlign: "center" }}>
+                    <span style={{ display: "inline-block", whiteSpace: "nowrap", textAlign: "center", overflow: "hidden", textOverflow: "ellipsis" }}>
                         Số lần đạt
                     </span>
                 </Tooltip>
@@ -300,7 +319,7 @@ function Qr() {
             key: "ThoiGianKiemTra",
             render: (text) =>
                 text
-                    ? new Date(text).toISOString().replace("T", " ").replace("Z", "").split(".")[0]
+                    ? moment(text).format("YYYY-MM-DD HH:mm:ss")
                     : "-"
         },
     ];

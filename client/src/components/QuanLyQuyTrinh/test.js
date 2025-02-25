@@ -11,6 +11,7 @@ import apiConfig from '../../apiConfig.json';
 import ViewerPDF from './ViewerPDF';
 import { Link, useHistory } from "react-router-dom";
 import './QLQT.css';
+
 const { Search } = Input;
 const { Header, Content } = Layout;
 
@@ -45,12 +46,11 @@ const AppHeader = () => {
             background: '#fff',
             padding: '0 20px'
         }}>
-            <div style={{ fontSize: '20px', fontWeight: 'bold' }}>Quản lý quy trình</div>
+            <div style={{ fontSize: '20px', fontWeight: 'bold' }}>Tên Trang</div>
             <Dropdown overlay={menu} trigger={['click']}>
                 <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                     <Avatar icon={<UserOutlined />} />
                     <span style={{ marginLeft: '8px' }}>{localStorage.getItem('HoTen')}</span>
-                    {/* <SettingOutlined style={{ marginLeft: '8px' }} /> */}
                 </div>
             </Dropdown>
         </Header>
@@ -60,7 +60,6 @@ const AppHeader = () => {
 const QLQT = () => {
     const [allData, setAllData] = useState([]); // tất cả phiên bản của các quy trình
     const [data, setData] = useState([]);         // phiên bản mới nhất của mỗi quy trình
-    const [listData, setListData] = useState([]);
     const [allProcessNames, setAllProcessNames] = useState([]);
     const [loading, setLoading] = useState(false);
 
@@ -72,18 +71,62 @@ const QLQT = () => {
     const [form] = Form.useForm();
     const [addVersionModalVisible, setAddVersionModalVisible] = useState(false);
     const [file, setFile] = useState(null);
+
+    // --- Quản lý PDF và nhận xét ---
     const [pdfVisible, setPdfVisible] = useState(false);
     const [pdfUrl, setPdfUrl] = useState('');
-
-    // --- Modal nhận xét khi xem tài liệu ---
-    const [isCommentModalVisible, setIsCommentModalVisible] = useState(false);
     const [currentRecord, setCurrentRecord] = useState(null);
+    const [isCommentModalVisible, setIsCommentModalVisible] = useState(false);
     const [comment, setComment] = useState('');
 
     const [messageApi, contextHolder] = message.useMessage();
     const currentRole = localStorage.getItem('role');
-    // Hàm xử lý khi người dùng xác nhận nhận xét
+
+    // Xử lý khi chọn file
+    const handleFileChange = (info) => {
+        if (info.fileList && info.fileList.length > 0) {
+            setFile(info.fileList[0].originFileObj);
+        }
+    };
+
+    // Lấy dữ liệu từ API, truyền userId vào query string
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const userId = localStorage.getItem('userId');
+            const res = await axios.get(`${apiConfig.API_BASE_URL}/B8/quytrinh`, {
+                params: { userId }
+            });
+            const list = res.data;
+            setAllData(list);
+            setData(getLatestVersions(list));
+            const names = Array.from(
+                new Set(list.map((item) => item.TenQuyTrinh).filter(Boolean))
+            );
+            setAllProcessNames(names);
+        } catch (error) {
+            message.error('Lỗi khi lấy dữ liệu: ' + error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Khi người dùng click vào 1 hàng, mở PDF ngay lập tức
+    const handleViewPdf = (record) => {
+        setCurrentRecord(record);
+        const url = `${apiConfig.API_BASE_URL}/B8/viewPDF?PhienBan=${record.PhienBan}`;
+        setPdfUrl(url);
+        setPdfVisible(true);
+    };
+
+    // Khi người dùng nhấn nút "Comment" trong ViewerPDF, mở modal nhập nhận xét
+    const handleOpenCommentModal = () => {
+        setIsCommentModalVisible(true);
+    };
+
+    // Khi người dùng xác nhận nhập nhận xét trong modal, gọi API và lưu nhận xét
     const handleConfirmComment = async () => {
+        if (!currentRecord) return;
         try {
             const userId = localStorage.getItem('userId');
             await axios.post(`${apiConfig.API_BASE_URL}/B8/markAsViewed`, {
@@ -99,58 +142,12 @@ const QLQT = () => {
             setComment('');
         }
     };
-    const handleOpenCommentModal = () => {
-        setIsCommentModalVisible(true);
-    };
-    // Xử lý khi chọn file
-    const handleFileChange = (info) => {
-        console.log("Upload info:", info);
-        if (info.fileList && info.fileList.length > 0) {
-            setFile(info.fileList[0].originFileObj);
-        }
+
+    // Đóng PDF
+    const handleViewerClose = () => {
+        setPdfVisible(false);
     };
 
-    const fetchData = async () => {
-        setLoading(true);
-        try {
-            const userId = localStorage.getItem('userId');
-            const res = await axios.get(`${apiConfig.API_BASE_URL}/B8/quytrinh`, {
-                params: { userId } // truyền userId vào query string
-            });
-            const list = res.data;
-            setAllData(list);
-            setData(getLatestVersions(list));
-
-            const names = Array.from(
-                new Set(list.map((item) => item.TenQuyTrinh).filter(Boolean))
-            );
-            setAllProcessNames(names);
-        } catch (error) {
-            message.error('Lỗi khi lấy dữ liệu: ' + error.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Khi người dùng click vào 1 hàng, mở PDF ngay lập tức
-    const handleViewPdf = async (record) => {
-        setCurrentRecord(record);
-        const url = `${apiConfig.API_BASE_URL}/B8/viewPDF?PhienBan=${record.PhienBan}`;
-        setPdfUrl(url);
-        setPdfVisible(true);
-        try {
-            const userId = localStorage.getItem('userId');
-            await axios.post(`${apiConfig.API_BASE_URL}/B8/markAsViewed`, {
-                NguoiDungId: parseInt(userId),
-                QuyTrinhVersionId: record.VersionId,
-                NhanXet: 'NULL',
-            });
-            message.success("Đã xem");
-        } catch (error) {
-            console.log(error)
-            message.error("Có lỗi xảy ra khi đánh dấu đã xem: " + error.message);
-        }
-    };
     // Xử lý submit form thêm phiên bản mới
     const handleAddVersion = async () => {
         try {
@@ -168,16 +165,19 @@ const QLQT = () => {
             formData.append('PhienBan', values.PhienBan);
             formData.append('NgayHieuLuc', values.NgayHieuLuc.format('YYYY-MM-DD'));
             formData.append('File', file);
-            formData.append('CurrentUrl', window.location.href);
 
             await axios.post(`${apiConfig.API_BASE_URL}/B8/themquytrinhversion`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            messageApi.open({
-                type: 'success',
-                content: `Thêm phiên bản thành công!`,
-            });
-            fetchData();
+            messageApi.open({ type: 'success', content: `Thêm phiên bản thành công!` });
+            const res = await axios.get(`${apiConfig.API_BASE_URL}/B8/quytrinh`);
+            const list = res.data;
+            setAllData(list);
+            setData(getLatestVersions(list));
+            const details = list
+                .filter(item => item.QuyTrinhId === modalTitleId)
+                .sort((a, b) => b.PhienBan - a.PhienBan);
+            setModalData(details);
             setAddVersionModalVisible(false);
             form.resetFields();
             setFile(null);
@@ -193,12 +193,90 @@ const QLQT = () => {
         }
     };
 
-    const optionsSelect = Array.from(
-        new Set(data.map((item) => item.TenQuyTrinh).filter(Boolean))
-    ).map((uniqueName) => ({
-        label: uniqueName,
-        value: uniqueName,
-    }));
+    const getLatestVersions = (list) => {
+        const grouped = {};
+        list.forEach(item => {
+            const key = item.QuyTrinhId;
+            if (!grouped[key] || item.PhienBan > grouped[key].PhienBan) {
+                grouped[key] = item;
+            }
+        });
+        return Object.values(grouped).sort((a, b) => b.PhienBan - a.PhienBan);
+    };
+
+    const onSearch = (value) => {
+        const filtered = getLatestVersions(allData).filter(item =>
+            item.TenQuyTrinh && item.TenQuyTrinh.toLowerCase().includes(value.toLowerCase())
+        );
+        setData(filtered);
+    };
+
+    const handleViewDetails = (QuyTrinhId, TenQuyTrinh) => {
+        const details = allData
+            .filter(item => item.QuyTrinhId === QuyTrinhId)
+            .sort((a, b) => b.PhienBan - a.PhienBan);
+        setModalData(details);
+        setModalTitle(TenQuyTrinh);
+        setModalTitleId(QuyTrinhId);
+        setModalVisible(true);
+    };
+
+    const handleSelectProcess = (value) => {
+        if (value) {
+            const filteredData = getLatestVersions(
+                allData.filter((item) => item.TenQuyTrinh === value)
+            );
+            setData(filteredData);
+        } else {
+            setData(getLatestVersions(allData));
+        }
+    };
+
+    const renderConfirmColumn = (text, record, field) => {
+        let allowedField;
+        if (currentRole === "Trưởng phòng") {
+            allowedField = "NguoiPheDuyet";
+        } else if (currentRole === "Quản lý") {
+            allowedField = "NguoiKiemTra";
+        } else if (currentRole === "Nhân viên") {
+            allowedField = "NguoiLap";
+        }
+        if (field !== allowedField) {
+            return text;
+        }
+        if (text) {
+            return text;
+        }
+        return (
+            <Button type="primary" onClick={(e) => { e.stopPropagation(); confirmField(record, field); }}>
+                Xác nhận
+            </Button>
+        );
+    };
+
+    const confirmField = async (record, field) => {
+        const HoTen = localStorage.getItem('HoTen');
+        const userId = localStorage.getItem('userId');
+        try {
+            await axios.post(`${apiConfig.API_BASE_URL}/B8/confirm`, {
+                VersionId: record.VersionId,
+                field,
+                HoTen,
+                userId,
+            });
+            message.success(`Xác nhận ${field} thành công!`);
+            setAllData(prevData =>
+                prevData.map(item =>
+                    item.VersionId === record.VersionId ? { ...item, [field]: HoTen } : item
+                )
+            );
+            setData(getLatestVersions(allData.map(item =>
+                item.VersionId === record.VersionId ? { ...item, [field]: HoTen } : item
+            )));
+        } catch (error) {
+            message.error(error.response?.data?.message || `Lỗi xác nhận ${field}`);
+        }
+    };
 
     const columns = [
         {
@@ -212,12 +290,8 @@ const QLQT = () => {
             key: 'TenQuyTrinh',
             render: (text) =>
                 text && text.length > 20 ? (
-                    <Tooltip title={text}>
-                        <span>{text.slice(0, 20)}...</span>
-                    </Tooltip>
-                ) : (
-                    text
-                ),
+                    <Tooltip title={text}><span>{text.slice(0, 20)}...</span></Tooltip>
+                ) : text,
         },
         {
             title: 'Phiên Bản',
@@ -281,106 +355,6 @@ const QLQT = () => {
         },
     ];
 
-    // Hàm lấy dữ liệu từ API
-    useEffect(() => {
-        fetchData();
-    }, []);
-
-    // Hàm lọc để lấy phiên bản mới nhất cho mỗi QuyTrinh (theo QuyTrinhId)
-    const getLatestVersions = (list) => {
-        const grouped = {};
-        list.forEach(item => {
-            const key = item.QuyTrinhId;
-            // So sánh phiên bản (giả sử PhienBan là kiểu int)
-            if (!grouped[key] || item.PhienBan > grouped[key].PhienBan) {
-                grouped[key] = item;
-            }
-        });
-        // Sắp xếp theo thứ tự giảm dần của PhienBan
-        return Object.values(grouped).sort((a, b) => b.PhienBan - a.PhienBan);
-    };
-    // Hàm tìm kiếm theo tên quy trình (lọc trên dữ liệu phiên bản mới nhất)
-    const onSearch = (value) => {
-        const filtered = getLatestVersions(allData).filter(item =>
-            item.TenQuyTrinh && item.TenQuyTrinh.toLowerCase().includes(value.toLowerCase())
-        );
-        setData(filtered);
-    };
-    // Khi nhấn nút "Xem tất cả", hiển thị modal với tất cả các phiên bản của quy trình được chọn
-    const handleViewDetails = (QuyTrinhId, TenQuyTrinh) => {
-        const details = allData
-            .filter(item => item.QuyTrinhId === QuyTrinhId)
-            .sort((a, b) => b.PhienBan - a.PhienBan);
-        setModalData(details);
-        setModalTitle(TenQuyTrinh);
-        setModalTitleId(QuyTrinhId);
-        setModalVisible(true);
-    };
-    const handleSelectProcess = (value) => {
-        if (value) {
-            const filteredData = getLatestVersions(
-                allData.filter((item) => item.TenQuyTrinh === value)
-            );
-            setData(filteredData);
-        } else {
-            setData(getLatestVersions(allData)); // Nếu không chọn gì, hiển thị toàn bộ
-        }
-    };
-    // Hàm render cột tùy thuộc vào role của người dùng và tên field cần xác nhận
-    const renderConfirmColumn = (text, record, field) => {
-        console.log("Duy", record)
-        let allowedField;
-        if (currentRole === "Trưởng phòng") {
-            allowedField = "NguoiPheDuyet";
-        } else if (currentRole === "Quản lý") {
-            allowedField = "NguoiKiemTra";
-        } else if (currentRole === "Nhân viên") {
-            allowedField = "NguoiLap";
-        }
-        if (field !== allowedField) {
-            return text;
-        }
-        if (text) {
-            return text;
-        }
-        return (
-            <Button type="primary" onClick={(e) => { e.stopPropagation(); confirmField(record, field) }}>
-                Xác nhận
-            </Button>
-        );
-    };
-    // Hàm xử lý xác nhận
-    const confirmField = async (record, field) => {
-        const HoTen = localStorage.getItem('HoTen');
-        const userId = localStorage.getItem('userId');
-        console.log(`Xác nhận ${field} cho phiên bản ${record.VersionId} của ${userId}`);
-        try {
-            await axios.post(`${apiConfig.API_BASE_URL}/B8/confirm`, {
-                VersionId: record.VersionId,
-                field, // Trường cần cập nhật
-                HoTen,
-                userId,
-            });
-            message.success(`Xác nhận ${field} thành công!`);
-            // Cập nhật lại state, ví dụ:
-            setAllData(prevData =>
-                prevData.map(item =>
-                    item.VersionId === record.VersionId ? { ...item, [field]: HoTen } : item
-                )
-            );
-            setData(getLatestVersions(allData.map(item =>
-                item.VersionId === record.VersionId ? { ...item, [field]: HoTen } : item
-            )));
-            setModalData(prevData =>
-                prevData.map(item =>
-                    item.VersionId === record.VersionId ? { ...item, [field]: HoTen } : item
-                )
-            );
-        } catch (error) {
-            message.error(error.response?.data?.message || `Lỗi xác nhận ${field}`);
-        }
-    };
-    // Định nghĩa cột cho bảng trong modal hiển thị danh sách phiên bản
     const modalColumns = [
         {
             title: 'Phiên Bản',
@@ -397,9 +371,21 @@ const QLQT = () => {
             },
         },
         {
-            title: 'Nhận xét',
-            dataIndex: 'NhanXet',
-            key: 'NhanXet',
+            title: 'Xem PDF',
+            key: 'openPdf',
+            render: (text, record) => {
+                const pdfUrl = `${apiConfig.API_BASE_URL}/B8/viewPDF?PhienBan=${record.PhienBan}`;
+                return (
+                    <a
+                        href={pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        Mở PDF ở tab mới
+                    </a>
+                );
+            },
         },
         {
             title: 'Ngày Hiệu Lực',
@@ -432,13 +418,17 @@ const QLQT = () => {
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
     ];
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
     return (
         <Layout>
             <AppHeader />
             <Content style={{ padding: 20 }}>
                 {contextHolder}
                 <Row gutter={[16, 16]}>
-                    {/* Cột bên trái: ô tìm kiếm */}
                     <Col xs={24} sm={4}>
                         <Card>
                             <Search
@@ -459,7 +449,6 @@ const QLQT = () => {
                             />
                         </Card>
                     </Col>
-                    {/* Cột bên phải: bảng danh sách phiên bản mới nhất */}
                     <Col xs={24} sm={20}>
                         <Card>
                             {loading ? <Spin /> : <Table
@@ -474,6 +463,7 @@ const QLQT = () => {
                         </Card>
                     </Col>
                 </Row>
+
                 {/* Modal hiển thị tất cả các phiên bản của quy trình được chọn */}
                 <Modal
                     title={modalTitle}
@@ -494,8 +484,9 @@ const QLQT = () => {
                         columns={modalColumns}
                         rowKey="VersionId"
                         pagination={false}
-                        onRow={(record) => ({ onClick: () => { setModalVisible(false); handleViewPdf(record); } })}
-                        rowClassName={(record) => record.TrangThai === 'Chưa xem' ? 'not-viewed' : ''}
+                        onRow={(record) => ({
+                            onClick: () => { setModalVisible(false); handleViewPdf(record); }
+                        })}
                     />
                     {/* Modal thêm phiên bản */}
                     <Modal
@@ -519,7 +510,6 @@ const QLQT = () => {
                             >
                                 <Input placeholder="Nhập số phiên bản" />
                             </Form.Item>
-
                             <Form.Item
                                 label="Ngày Hiệu Lực"
                                 name="NgayHieuLuc"
@@ -527,7 +517,6 @@ const QLQT = () => {
                             >
                                 <DatePicker format="YYYY-MM-DD" />
                             </Form.Item>
-
                             <Form.Item
                                 label="Tải lên file PDF"
                                 name="File"
@@ -544,6 +533,7 @@ const QLQT = () => {
                         </Form>
                     </Modal>
                 </Modal>
+
                 {/* Modal nhập nhận xét */}
                 <Modal
                     title="Nhập nhận xét"
@@ -561,10 +551,11 @@ const QLQT = () => {
                         onChange={(e) => setComment(e.target.value)}
                     />
                 </Modal>
+
                 {pdfVisible && (
                     <ViewerPDF
                         fileUrl={pdfUrl}
-                        onClose={() => { fetchData(); setPdfVisible(false) }}
+                        onClose={handleViewerClose}
                         onComment={handleOpenCommentModal}
                     />
                 )}

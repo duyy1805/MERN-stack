@@ -10,7 +10,8 @@ import dayjs from 'dayjs';
 import apiConfig from '../../apiConfig.json';
 import ViewerPDF from './ViewerPDF';
 import { Link, useHistory } from "react-router-dom";
-import './QLQT.css';
+import "./Admin.css"
+
 const { Search } = Input;
 const { Header, Content } = Layout;
 
@@ -57,7 +58,7 @@ const AppHeader = () => {
     );
 };
 
-const QLQT = () => {
+const Admin = () => {
     const [allData, setAllData] = useState([]); // tất cả phiên bản của các quy trình
     const [data, setData] = useState([]);         // phiên bản mới nhất của mỗi quy trình
     const [listData, setListData] = useState([]);
@@ -433,21 +434,21 @@ const QLQT = () => {
         },
     ];
     return (
-        <Layout>
-            <AppHeader />
-            <Content style={{ padding: 20 }}>
+        <Layout class="Admin">
+            {/* <AppHeader /> */}
+            <Content style={{ padding: 10, backgroundColor: '#162f48' }}>
                 {contextHolder}
                 <Row gutter={[16, 16]}>
                     {/* Cột bên trái: ô tìm kiếm */}
-                    <Col xs={24} sm={4}>
-                        <Card>
-                            <Search
+                    <Col xs={24} sm={8}>
+                        <Card style={{ backgroundColor: '#001529', border: 'none' }}>
+                            {/* <Search
                                 placeholder="Nhập tên quy trình cần tìm"
                                 enterButton="Tìm"
                                 allowClear
                                 onSearch={onSearch}
                                 style={{ marginBottom: 16 }}
-                            />
+                            /> */}
                             <Select
                                 showSearch
                                 size="large"
@@ -460,8 +461,8 @@ const QLQT = () => {
                         </Card>
                     </Col>
                     {/* Cột bên phải: bảng danh sách phiên bản mới nhất */}
-                    <Col xs={24} sm={20}>
-                        <Card>
+                    <Col xs={24} sm={24}>
+                        <Card style={{ backgroundColor: '#001529', border: 'none' }}>
                             {loading ? <Spin /> : <Table
                                 dataSource={data}
                                 columns={columns}
@@ -487,13 +488,16 @@ const QLQT = () => {
                             Đóng
                         </Button>
                     ]}
+                    className="modal-versions"
                     width={1000}
+                    style={{ backgroundColor: '#001529' }}
                 >
                     <Table
                         dataSource={modalData}
                         columns={modalColumns}
                         rowKey="VersionId"
                         pagination={false}
+                        className="table-versions"
                         onRow={(record) => ({ onClick: () => { setModalVisible(false); handleViewPdf(record); } })}
                         rowClassName={(record) => record.TrangThai === 'Chưa xem' ? 'not-viewed' : ''}
                     />
@@ -502,6 +506,7 @@ const QLQT = () => {
                         title="Thêm Version Mới"
                         visible={addVersionModalVisible}
                         onCancel={() => setAddVersionModalVisible(false)}
+                        className="modal-versions"
                         footer={[
                             <Button key="cancel" onClick={() => setAddVersionModalVisible(false)}>
                                 Hủy
@@ -511,7 +516,7 @@ const QLQT = () => {
                             </Button>
                         ]}
                     >
-                        <Form form={form} layout="vertical">
+                        <Form form={form} layout="vertical" className="form-add-version">
                             <Form.Item
                                 label="Phiên Bản"
                                 name="PhienBan"
@@ -552,6 +557,7 @@ const QLQT = () => {
                     onCancel={() => setIsCommentModalVisible(false)}
                     okText="Xác nhận"
                     cancelText="Hủy"
+                    className="modal-versions"
                 >
                     <p>Nhập nhận xét của bạn:</p>
                     <Input.TextArea
@@ -573,4 +579,4 @@ const QLQT = () => {
     );
 };
 
-export default QLQT;
+export default Admin;
