@@ -51,7 +51,7 @@ const SignIn = () => {
             localStorage.setItem("userId", userId);
             localStorage.setItem("role", role);
             localStorage.setItem("HoTen", hoTen);
-            history.push("/QLQT");
+            history.push("/AdminDashboard");
         }
     };
 

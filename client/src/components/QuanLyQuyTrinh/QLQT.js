@@ -135,20 +135,29 @@ const QLQT = () => {
     // Khi người dùng click vào 1 hàng, mở PDF ngay lập tức
     const handleViewPdf = async (record) => {
         setCurrentRecord(record);
-        const url = `${apiConfig.API_BASE_URL}/B8/viewPDF?PhienBan=${record.PhienBan}`;
-        setPdfUrl(url);
-        setPdfVisible(true);
-        try {
-            const userId = localStorage.getItem('userId');
-            await axios.post(`${apiConfig.API_BASE_URL}/B8/markAsViewed`, {
-                NguoiDungId: parseInt(userId),
-                QuyTrinhVersionId: record.VersionId,
-                NhanXet: 'NULL',
+        console.log(record)
+        if (record.VersionId === null) {
+            messageApi.open({
+                type: 'error',
+                content: `Phiên bản không tồn tại!`,
             });
-            message.success("Đã xem");
-        } catch (error) {
-            console.log(error)
-            message.error("Có lỗi xảy ra khi đánh dấu đã xem: " + error.message);
+        }
+        else {
+            const url = `${apiConfig.API_BASE_URL}/B8/viewPDF?QuyTrinhVersionId=${record.VersionId}`;
+            setPdfUrl(url);
+            setPdfVisible(true);
+            try {
+                const userId = localStorage.getItem('userId');
+                await axios.post(`${apiConfig.API_BASE_URL}/B8/markAsViewed`, {
+                    NguoiDungId: parseInt(userId),
+                    QuyTrinhVersionId: record.VersionId,
+                    NhanXet: 'NULL',
+                });
+                message.success("Đã xem");
+            } catch (error) {
+                console.log(error)
+                message.error("Có lỗi xảy ra khi đánh dấu đã xem: " + error.message);
+            }
         }
     };
     // Xử lý submit form thêm phiên bản mới
@@ -229,12 +238,11 @@ const QLQT = () => {
             dataIndex: 'FilePDF',
             key: 'FilePDF',
             render: (text, record) => {
-                const downloadUrl = `${apiConfig.API_BASE_URL}/B8/downloadPDF?PhienBan=${record.PhienBan}`;
-                return (
-                    <div>
-                        <a href={downloadUrl} target="_blank" rel="noopener noreferrer">Tải PDF</a>
-                    </div>
-                );
+                if (record.PhienBan === null) {
+                    return <span>Chưa có phiên bản</span>;
+                }
+                const downloadUrl = `${apiConfig.API_BASE_URL}/B8/downloadPDF?QuyTrinhVersionId=${record.VersionId}`;
+                return <div><a href={downloadUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>Tải PDF</a></div>;
             },
         },
         {
@@ -242,24 +250,6 @@ const QLQT = () => {
             dataIndex: 'NgayHieuLuc',
             key: 'NgayHieuLuc',
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
-        },
-        {
-            title: 'Người Lập',
-            dataIndex: 'NguoiLap',
-            key: 'NguoiLap',
-            render: (text, record) => renderConfirmColumn(text, record, 'NguoiLap'),
-        },
-        {
-            title: 'Người Kiểm Tra',
-            dataIndex: 'NguoiKiemTra',
-            key: 'NguoiKiemTra',
-            render: (text, record) => renderConfirmColumn(text, record, 'NguoiKiemTra'),
-        },
-        {
-            title: 'Người Phê Duyệt',
-            dataIndex: 'NguoiPheDuyet',
-            key: 'NguoiPheDuyet',
-            render: (text, record) => renderConfirmColumn(text, record, 'NguoiPheDuyet'),
         },
         {
             title: 'Ngày Tạo',
@@ -392,8 +382,11 @@ const QLQT = () => {
             dataIndex: 'FilePDF',
             key: 'FilePDF',
             render: (text, record) => {
-                const downloadUrl = `${apiConfig.API_BASE_URL}/B8/downloadPDF?PhienBan=${record.PhienBan}`;
-                return <a href={downloadUrl} target="_blank" rel="noopener noreferrer">Tải PDF</a>;
+                if (record.PhienBan === null) {
+                    return <span>Chưa có phiên bản</span>;
+                }
+                const downloadUrl = `${apiConfig.API_BASE_URL}/B8/downloadPDF?QuyTrinhVersionId=${record.VersionId}`;
+                return <a href={downloadUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>Tải PDF</a>;
             },
         },
         {
@@ -408,24 +401,6 @@ const QLQT = () => {
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
         {
-            title: 'Người Lập',
-            dataIndex: 'NguoiLap',
-            key: 'NguoiLap',
-            render: (text, record) => renderConfirmColumn(text, record, 'NguoiLap'),
-        },
-        {
-            title: 'Người Kiểm Tra',
-            dataIndex: 'NguoiKiemTra',
-            key: 'NguoiKiemTra',
-            render: (text, record) => renderConfirmColumn(text, record, 'NguoiKiemTra'),
-        },
-        {
-            title: 'Người Phê Duyệt',
-            dataIndex: 'NguoiPheDuyet',
-            key: 'NguoiPheDuyet',
-            render: (text, record) => renderConfirmColumn(text, record, 'NguoiPheDuyet'),
-        },
-        {
             title: 'Ngày Tạo',
             dataIndex: 'NgayTao',
             key: 'NgayTao',
@@ -433,7 +408,7 @@ const QLQT = () => {
         },
     ];
     return (
-        <Layout>
+        <Layout style={{ minHeight: '100vh' }}>
             <AppHeader />
             <Content style={{ padding: 20 }}>
                 {contextHolder}

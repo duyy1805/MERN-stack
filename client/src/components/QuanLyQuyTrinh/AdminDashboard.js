@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Layout, Menu } from "antd";
+import { Layout, Menu, Dropdown, Avatar } from "antd";
 import {
     UserOutlined,
     FileOutlined,
@@ -7,11 +7,34 @@ import {
 } from "@ant-design/icons";
 import Dashboard from "./QLQT"; // Import component Dashboard
 import Admin from "./Admin";
+import { Link, useHistory } from "react-router-dom";
+
 const { Header, Sider, Content } = Layout;
 
 const AdminDashboard = () => {
     const [selectedKey, setSelectedKey] = useState("dashboard");
 
+    const history = useHistory();
+    const handleLogout = () => {
+        // Xóa dữ liệu lưu trữ và chuyển hướng
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('role');
+        localStorage.removeItem('HoTen');
+        history.push('/login'); // chuyển hướng về trang login
+    };
+    const menu = (
+        <Menu>
+            <Menu.Item key="account">
+                <a href="/account">Tài khoản</a>
+            </Menu.Item>
+            <Menu.Item key="settings">
+                <a href="/settings">Cài đặt</a>
+            </Menu.Item>
+            <Menu.Item key="logout" onClick={handleLogout}>
+                Log Out
+            </Menu.Item>
+        </Menu>
+    );
     const menuItems = [
         { key: "dashboard", icon: <DashboardOutlined />, label: "Dashboard" },
         { key: "users", icon: <UserOutlined />, label: "Users" },
@@ -36,13 +59,22 @@ const AdminDashboard = () => {
             <Header
                 style={{
                     background: "#001529",
-                    padding: 0,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    padding: "0 20px 0 10px",
                     textAlign: "center",
                     color: "#fff",
                     boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
                 }}
             >
-                <h1 style={{ color: "#fff" }}>Admin Dashboard</h1>
+                <div style={{ fontSize: '20px', fontWeight: 'bold' }}>Quản lý quy trình</div>
+                <Dropdown overlay={menu} trigger={['click']}>
+                    <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                        <Avatar icon={<UserOutlined />} />
+                        <span style={{ marginLeft: '8px' }}>{localStorage.getItem('HoTen')}</span>
+                        {/* <SettingOutlined style={{ marginLeft: '8px' }} /> */}
+                    </div>
+                </Dropdown>
             </Header>
             <Layout style={{}}>
                 <Sider collapsible>
