@@ -7,6 +7,7 @@ import {
 } from "@ant-design/icons";
 import Dashboard from "./QLQT"; // Import component Dashboard
 import Admin from "./Admin";
+import ChartDasdboard from "./ChartDasdboard";
 import { Link, useHistory } from "react-router-dom";
 
 const { Header, Sider, Content } = Layout;
@@ -37,7 +38,7 @@ const AdminDashboard = () => {
     );
     const menuItems = [
         { key: "dashboard", icon: <DashboardOutlined />, label: "Dashboard" },
-        { key: "users", icon: <UserOutlined />, label: "Users" },
+        { key: "ChartDasdboard", icon: <UserOutlined />, label: "ChartDasdboard" },
         { key: "documents", icon: <FileOutlined />, label: "Documents" },
     ];
 
@@ -45,8 +46,8 @@ const AdminDashboard = () => {
         switch (selectedKey) {
             case "dashboard":
                 return <Admin />;
-            // case "users":
-            //     return <Users />;
+            case "ChartDasdboard":
+                return <ChartDasdboard />;
             // case "documents":
             //     return <Documents />;
             default:
@@ -55,11 +56,12 @@ const AdminDashboard = () => {
     };
 
     return (
-        <Layout style={{ minHeight: "100vh" }}>
+        <Layout style={{ minHeight: "100vh", backgroundColor: "#162f48" }}>
             <Header
                 style={{
                     background: "#001529",
                     display: 'flex',
+                    height: '64px',
                     justifyContent: 'space-between',
                     padding: "0 20px 0 10px",
                     textAlign: "center",

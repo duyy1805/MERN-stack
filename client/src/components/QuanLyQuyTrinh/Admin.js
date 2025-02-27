@@ -77,6 +77,7 @@ const Admin = () => {
     const [allData, setAllData] = useState([]); // tất cả phiên bản của các quy trình
     const [data, setData] = useState([]);         // phiên bản mới nhất của mỗi quy trình
     const [allProcessNames, setAllProcessNames] = useState([]);
+    const [allProcessNames_, setAllProcessNames_] = useState([]);
     const [loading, setLoading] = useState(false);
 
     const [modalVisible, setModalVisible] = useState(false);
@@ -91,7 +92,8 @@ const Admin = () => {
     const [file, setFile] = useState(null);
     const [pdfVisible, setPdfVisible] = useState(false);
     const [pdfUrl, setPdfUrl] = useState('');
-
+    const [selectedProcess, setSelectedProcess] = useState(null);
+    const [selectedProcess_, setSelectedProcess_] = useState(null);
     // Modal nhận xét khi xem tài liệu
     const [isCommentModalVisible, setIsCommentModalVisible] = useState(false);
     const [currentRecord, setCurrentRecord] = useState(null);
@@ -143,13 +145,17 @@ const Admin = () => {
             setData(getLatestVersions(list));
 
             const names = Array.from(
-                new Set(list.map((item) => item.TenQuyTrinh).filter(Boolean))
+                new Set(list.map((item) => item.BoPhanBanHanh).filter(Boolean))
             );
             setAllProcessNames(names);
         } catch (error) {
             message.error('Lỗi khi lấy dữ liệu: ' + error.message);
         } finally {
             setLoading(false);
+
+            handleSelectProcess(selectedProcess);
+            setSelectedProcess_(selectedProcess_);
+            // setAllProcessNames_([]);
         }
     };
 
@@ -163,9 +169,16 @@ const Admin = () => {
             });
         }
         else {
-            const url = `${apiConfig.API_BASE_URL}/B8/viewPDF?QuyTrinhVersionId=${record.QuyTrinhVersionId}`;
-            setPdfUrl(url);
-            setPdfVisible(true);
+            try {
+                const url = `${apiConfig.API_BASE_URL}/B8/viewPDF?QuyTrinhVersionId=${record.QuyTrinhVersionId}`;
+                setPdfUrl(url);
+                setPdfVisible(true);
+            } catch (error) {
+                messageApi.open({
+                    type: 'error',
+                    content: `Lỗi xem PDF: ${error.message}`,
+                });
+            }
         }
     };
 
@@ -179,22 +192,21 @@ const Admin = () => {
             setAddProcessModalVisible(false);
             processForm.resetFields();
             fetchData();
+            setSelectedProcess(null);
         } catch (error) {
             message.error("Lỗi thêm quy trình: " + error.response?.data || error.message);
         }
     };
 
-    // Xử lý submit form thêm phiên bản mới
     const handleAddVersion = async () => {
         try {
+            setLoading(true);
             const values = await form.validateFields();
             if (!file) {
-                messageApi.open({
-                    type: 'error',
-                    content: `Vui lòng tải lên file PDF!`,
-                });
+                messageApi.open({ type: 'error', content: `Vui lòng tải lên file PDF!` });
                 return;
             }
+
             const formData = new FormData();
             formData.append('QuyTrinhId', modalTitleId);
             formData.append('TenQuyTrinh', modalTitle);
@@ -202,29 +214,30 @@ const Admin = () => {
             formData.append('NgayHieuLuc', values.NgayHieuLuc.format('YYYY-MM-DD'));
             formData.append('File', file);
             formData.append('CurrentUrl', window.location.href);
+            values.BoPhanIds.forEach(id => formData.append('BoPhanIds', id));
 
+            // Log tất cả dữ liệu trong FormData
+            console.log("📌 Dữ liệu FormData:");
+            for (let pair of formData.entries()) {
+                console.log(`${pair[0]}: ${pair[1]}`);
+            }
             await axios.post(`${apiConfig.API_BASE_URL}/B8/themquytrinhversion`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            messageApi.open({
-                type: 'success',
-                content: `Thêm phiên bản thành công!`,
-            });
+
+            messageApi.open({ type: 'success', content: `Thêm phiên bản thành công!` });
             fetchData();
             setAddVersionModalVisible(false);
             form.resetFields();
             setFile(null);
-        } catch (errorInfo) {
-            console.log("Lỗi validate form:", errorInfo);
-            if (errorInfo.errorFields) {
-                errorInfo.errorFields.forEach(field => {
-                    message.error(field.errors[0]);
-                });
-            } else {
-                message.error(`Lỗi: ${errorInfo.message}`);
-            }
+        } catch (error) {
+            message.error(`Lỗi: ${error.message}`);
+        }
+        finally {
+            setLoading(false);
         }
     };
+
 
     const optionsSelect = Array.from(
         new Set(data.map((item) => item.TenQuyTrinh).filter(Boolean))
@@ -241,6 +254,14 @@ const Admin = () => {
         }));
     };
 
+    const uniqueBoPhan = [...new Set(allData
+        .map(item => item.BoPhan)
+        .filter(bp => bp))] // Loại bỏ giá trị NULL hoặc rỗng
+
+    const boPhanOptions = uniqueBoPhan.map(bp => ({
+        value: bp,
+        label: bp
+    }));
     const LPTFilters = createFilters('BoPhanBanHanh');
     // Các cột cho bảng chính (phiên bản mới nhất của mỗi quy trình)
     const columns = [
@@ -267,19 +288,14 @@ const Admin = () => {
             title: 'Bộ phận ban hành',
             dataIndex: 'BoPhanBanHanh',
             key: 'BoPhanBanHanh',
+            width: '15%',
             align: "center",
             filters: LPTFilters,
             filterSearch: true,
             onFilter: (value, record) => record.BoPhanBanHanh.includes(value),
         },
         {
-            title: 'Phiên Bản',
-            dataIndex: 'PhienBan',
-            key: 'PhienBan',
-            align: "center",
-        },
-        {
-            title: 'File PDF',
+            title: 'Phiên bản',
             dataIndex: 'FilePDF',
             key: 'FilePDF',
             align: "center",
@@ -287,8 +303,8 @@ const Admin = () => {
                 if (record.PhienBan === null) {
                     return <span>Chưa có phiên bản</span>;
                 }
-                const downloadUrl = `${apiConfig.API_BASE_URL}/B8/downloadPDF?PhienBan=${record.PhienBan}`;
-                return <a href={downloadUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>Tải PDF</a>;
+                const downloadUrl = `${apiConfig.API_BASE_URL}/B8/downloadPDF?QuyTrinhVersionId=${record.QuyTrinhVersionId}`;
+                return <a href={downloadUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{record.PhienBan}</a>;
             },
         },
         {
@@ -328,13 +344,14 @@ const Admin = () => {
         const grouped = {};
         list.forEach(item => {
             const key = item.QuyTrinhId;
-            // So sánh phiên bản (giả sử PhienBan là kiểu số)
-            if (!grouped[key] || item.PhienBan > grouped[key].PhienBan) {
+            const version = parseFloat(item.PhienBan); // Chuyển đổi thành số
+
+            if (!grouped[key] || version > parseFloat(grouped[key].PhienBan)) {
                 grouped[key] = item;
             }
         });
         // Sắp xếp theo thứ tự giảm dần của PhienBan
-        return Object.values(grouped).sort((a, b) => b.PhienBan - a.PhienBan);
+        return Object.values(grouped).sort((a, b) => b.NgayTao - a.NgayTao);
     };
 
     // Hàm tìm kiếm theo tên quy trình (lọc trên dữ liệu phiên bản mới nhất)
@@ -367,40 +384,43 @@ const Admin = () => {
     };
 
     const handleSelectProcess = (value) => {
+        setSelectedProcess(value);
+        if (value) {
+            const filteredData = getLatestVersions(
+                allData.filter((item) => item.BoPhanBanHanh === value)
+            );
+            const names_ = Array.from(
+                new Set(
+                    allData
+                        .filter(item => value.includes(item.BoPhanBanHanh)) // Chỉ lấy những item có BoPhanBanHanh thuộc names
+                        .map(item => item.TenQuyTrinh) // Lấy TenQuyTrinh
+                        .filter(Boolean) // Loại bỏ giá trị null hoặc undefined
+                )
+            );
+            console.log(names_);
+            setAllProcessNames_(names_);
+            setData(filteredData);
+        } else {
+            setSelectedProcess_(null);
+            setAllProcessNames_([]);
+            setData([]); // Nếu không chọn gì, hiển thị toàn bộ
+        }
+    };
+
+    const handleSelectProcess_ = (value) => {
+        setSelectedProcess_(value);
         if (value) {
             const filteredData = getLatestVersions(
                 allData.filter((item) => item.TenQuyTrinh === value)
             );
             setData(filteredData);
         } else {
-            setData(getLatestVersions(allData)); // Nếu không chọn gì, hiển thị toàn bộ
+            const filteredData = getLatestVersions(
+                allData.filter((item) => item.BoPhanBanHanh === selectedProcess)
+            );
+            setData(filteredData);
         }
     };
-
-    // Hàm render cột tùy thuộc vào role của người dùng và tên field cần xác nhận
-    const renderConfirmColumn = (text, record, field) => {
-        console.log("Duy", record)
-        let allowedField;
-        if (currentRole === "Trưởng phòng") {
-            allowedField = "NguoiPheDuyet";
-        } else if (currentRole === "Quản lý") {
-            allowedField = "NguoiKiemTra";
-        } else if (currentRole === "Nhân viên") {
-            allowedField = "NguoiLap";
-        }
-        if (field !== allowedField) {
-            return text;
-        }
-        if (text) {
-            return text;
-        }
-        return (
-            <Button type="primary" onClick={(e) => { e.stopPropagation(); confirmField(record, field) }}>
-                Xác nhận
-            </Button>
-        );
-    };
-
     // Hàm xử lý xác nhận
     const confirmField = async (record, field) => {
         const HoTen = localStorage.getItem('HoTen');
@@ -431,32 +451,29 @@ const Admin = () => {
     // ----- Các cột cho Modal "Xem chi tiết" chỉ hiển thị thông tin Version -----
     const modalVersionColumns = [
         {
-            title: 'Phiên Bản',
-            dataIndex: 'PhienBan',
-            key: 'PhienBan',
-            align: "center",
-        },
-        {
-            title: 'File PDF',
+            title: 'Phiên bản',
             dataIndex: 'FilePDF',
             key: 'FilePDF',
+            align: "center",
             render: (text, record) => {
                 if (record.PhienBan === null) {
                     return <span>Chưa có phiên bản</span>;
                 }
-                const downloadUrl = `${apiConfig.API_BASE_URL}/B8/downloadPDF?PhienBan=${record.PhienBan}`;
-                return <a href={downloadUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>Tải PDF</a>;
+                const downloadUrl = `${apiConfig.API_BASE_URL}/B8/downloadPDF?QuyTrinhVersionId=${record.QuyTrinhVersionId}`;
+                return <a href={downloadUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{record.PhienBan}</a>;
             },
         },
         {
             title: 'Ngày Hiệu Lực',
             dataIndex: 'NgayHieuLuc',
             key: 'NgayHieuLuc',
+            align: "center",
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
         {
             title: 'Chi Tiết',
             key: 'action',
+            align: "center",
             render: (text, record) => (
                 <Button
                     type="primary"
@@ -470,13 +487,29 @@ const Admin = () => {
 
     // Hàm mở Modal trạng thái (danh sách người dùng cho version được chọn)
     const handleViewStatus = (record) => {
-        // Lấy dữ liệu của phiên bản được chọn (các dòng dữ liệu có cùng VersionId)
+        // Kiểm tra nếu BoPhanGui bị null hoặc undefined thì gán mảng rỗng []
+        const boPhanGuiArray = record.BoPhanGui ? record.BoPhanGui.split(',') : [];
+
+        // Lọc dữ liệu dựa trên VersionId và BoPhan có trong BoPhanGui
         const usersData = allData.filter(item =>
-            item.QuyTrinhVersionId === record.QuyTrinhVersionId && item.ChucVu !== "admin"
+            item.QuyTrinhVersionId === record.QuyTrinhVersionId &&
+            // (boPhanGuiArray.length === 0 || boPhanGuiArray.includes(item.BoPhan)) && 
+            item.ChucVu !== "admin" // Loại bỏ admin
         );
+
         setStatusData(usersData);
         setStatusModalVisible(true);
     };
+    const homNay = dayjs();
+
+    // Lọc tài liệu mới (trong 30 ngày gần đây)
+    const taiLieuMoi = allData.filter(record => {
+        if (!record.NgayTao) return false;
+        const ngayTao = dayjs(record.NgayTao);
+        return homNay.diff(ngayTao, "day") < 30;
+    });
+    const uniqueQuyTrinh = new Set(taiLieuMoi.map(record => `${record.TenQuyTrinh}_${record.QuyTrinhVersionId}`));
+    const soQuyTrinhKhacNhau = uniqueQuyTrinh.size;
 
     return (
         <Layout className="Admin">
@@ -488,32 +521,49 @@ const Admin = () => {
                             <Select
                                 showSearch
                                 size="large"
+                                value={selectedProcess}
                                 onChange={handleSelectProcess}
                                 allowClear
-                                placeholder="Chọn tên quy trình"
+                                placeholder="Chọn bộ phận"
                                 style={{ width: '100%' }}
                                 options={allProcessNames.map(name => ({ label: name, value: name }))}
                             />
                         </Card>
                     </Col>
+                    <Col xs={24} sm={8}>
+                        <Card style={{ backgroundColor: '#001529', border: 'none' }}>
+                            <Select
+                                showSearch
+                                size="large"
+                                value={selectedProcess_}
+                                onChange={handleSelectProcess_}
+                                allowClear
+                                placeholder="Chọn tài liệu"
+                                style={{ width: '100%' }}
+                                options={allProcessNames_.map(name => ({ label: name, value: name }))}
+                            />
+                        </Card>
+                    </Col>
                     {/* Bảng phiên bản mới nhất */}
                     <Col xs={24} sm={24}>
-                        <Card style={{ backgroundColor: '#001529', border: 'none' }}>
-                            <div style={{ marginBottom: 16, textAlign: 'right' }}>
-                                <Button type="primary" onClick={() => setAddProcessModalVisible(true)}>Thêm quy trình mới</Button>
-                            </div>
-                            {loading ? <Spin /> : (
-                                <Table
-                                    dataSource={data}
-                                    columns={columns}
-                                    rowKey="VersionId"
-                                    onRow={(record) => ({
-                                        onClick: () => handleViewPdf(record)
-                                    })}
-                                // rowClassName={(record) => record.PhienBan === 'Chưa xem' ? 'not-viewed' : ''}
-                                />
-                            )}
-                        </Card>
+                        {selectedProcess && (
+                            <Card style={{ backgroundColor: '#001529', border: 'none' }}>
+                                <div style={{ marginBottom: 16, textAlign: 'right' }}>
+                                    <Button type="primary" onClick={() => setAddProcessModalVisible(true)}>Thêm quy trình mới</Button>
+                                </div>
+                                {loading ? <Spin /> : (
+                                    <Table
+                                        dataSource={data}
+                                        columns={columns}
+                                        rowKey="VersionId"
+                                        scroll={{ y: 55 * 9 }}
+                                        onRow={(record) => ({
+                                            onClick: () => handleViewPdf(record),
+                                        })}
+                                    />
+                                )}
+                            </Card>
+                        )}
 
                     </Col>
                 </Row>
@@ -540,6 +590,7 @@ const Admin = () => {
                         rowKey="VersionId"
                         pagination={false}
                         className="table-versions"
+                        scroll={{ y: 55 * 9 }}
                         onRow={(record) => ({
                             onClick: () => { setModalVisible(false); handleViewPdf(record) }
                         })}
@@ -554,7 +605,7 @@ const Admin = () => {
                             <Button key="cancel" onClick={() => setAddVersionModalVisible(false)}>
                                 Hủy
                             </Button>,
-                            <Button key="submit" type="primary" onClick={handleAddVersion}>
+                            <Button key="submit" type="primary" onClick={handleAddVersion} loading={loading}>
                                 Lưu
                             </Button>
                         ]}
@@ -567,7 +618,6 @@ const Admin = () => {
                             >
                                 <Input placeholder="Nhập số phiên bản" />
                             </Form.Item>
-
                             <Form.Item
                                 label="Ngày Hiệu Lực"
                                 name="NgayHieuLuc"
@@ -575,7 +625,17 @@ const Admin = () => {
                             >
                                 <DatePicker format="YYYY-MM-DD" />
                             </Form.Item>
-
+                            <Form.Item
+                                label="Chọn Bộ Phận"
+                                name="BoPhanIds"
+                                rules={[{ required: true, message: 'Vui lòng chọn bộ phận!' }]}
+                            >
+                                <Select
+                                    mode="multiple"
+                                    placeholder="Chọn bộ phận"
+                                    options={boPhanOptions} // Danh sách bộ phận lấy từ API
+                                />
+                            </Form.Item>
                             <Form.Item
                                 label="Tải lên file PDF"
                                 name="File"
@@ -626,6 +686,7 @@ const Admin = () => {
                     <Table
                         dataSource={statusData}
                         className="table-versions"
+                        scroll={{ y: 55 * 9 }}
                         rowClassName={(record) => record.TrangThai === 'Chưa xem' ? 'not-viewed' : ''}
                         columns={[
                             {
@@ -634,9 +695,9 @@ const Admin = () => {
                                 key: 'HoTen',
                             },
                             {
-                                title: 'Chức vụ',
-                                dataIndex: 'ChucVu', // Điều chỉnh key nếu tên field khác (vd: 'Chức vụ')
-                                key: 'ChucVu',
+                                title: 'Bộ phận',
+                                dataIndex: 'BoPhan', // Điều chỉnh key nếu tên field khác (vd: 'Chức vụ')
+                                key: 'BoPhan',
                             },
                             {
                                 title: 'Trạng thái',
@@ -654,6 +715,15 @@ const Admin = () => {
                                 dataIndex: 'NhanXet',
                                 key: 'NhanXet',
                             },
+                            {
+                                title: 'Ghi chú',
+                                key: 'GhiChu',
+                                render: (_, record) => {
+                                    // Kiểm tra BoPhanGui có null không
+                                    const boPhanGuiArray = record.BoPhanGui ? record.BoPhanGui.split(',') : [];
+                                    return boPhanGuiArray.includes(record.BoPhan) ? 'Được gửi mail' : '';
+                                }
+                            }
                         ]}
                         rowKey={(record, index) => `${record.VersionId}_${index}`}
                         pagination={false}
@@ -700,7 +770,7 @@ const Admin = () => {
                 {pdfVisible && (
                     <ViewerPDF
                         fileUrl={pdfUrl}
-                        onClose={() => { fetchData(); setPdfVisible(false) }}
+                        onClose={() => { setPdfVisible(false) }}
                         onComment={handleOpenCommentModal}
                     />
                 )}

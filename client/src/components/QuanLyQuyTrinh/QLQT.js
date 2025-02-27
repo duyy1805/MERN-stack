@@ -4,13 +4,14 @@ import {
     Upload, Form, DatePicker, Select, Layout, Menu, Dropdown, Avatar,
     Card
 } from 'antd';
+import { PieChart, Pie, Cell, Tooltip as TooltipRechart, Legend } from "recharts";
 import { UploadOutlined, SettingOutlined, UserOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import apiConfig from '../../apiConfig.json';
 import ViewerPDF from './ViewerPDF';
 import { Link, useHistory } from "react-router-dom";
-import './QLQT.css';
+// import './QLQT.css';
 const { Search } = Input;
 const { Header, Content } = Layout;
 
@@ -39,11 +40,14 @@ const AppHeader = () => {
 
     return (
         <Header style={{
+            background: "#001529",
             display: 'flex',
+            height: '64px',
             justifyContent: 'space-between',
-            alignItems: 'center',
-            background: '#fff',
-            padding: '0 20px'
+            padding: "0 20px 0 10px",
+            textAlign: "center",
+            color: "#fff",
+            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
         }}>
             <div style={{ fontSize: '20px', fontWeight: 'bold' }}>Quản lý quy trình</div>
             <Dropdown overlay={menu} trigger={['click']}>
@@ -59,8 +63,7 @@ const AppHeader = () => {
 
 const QLQT = () => {
     const [allData, setAllData] = useState([]); // tất cả phiên bản của các quy trình
-    const [data, setData] = useState([]);         // phiên bản mới nhất của mỗi quy trình
-    const [listData, setListData] = useState([]);
+    const [data, setData] = useState([]);
     const [allProcessNames, setAllProcessNames] = useState([]);
     const [loading, setLoading] = useState(false);
 
@@ -70,7 +73,6 @@ const QLQT = () => {
     const [modalTitleId, setModalTitleId] = useState(''); // id quy trình được chọn
 
     const [form] = Form.useForm();
-    const [addVersionModalVisible, setAddVersionModalVisible] = useState(false);
     const [file, setFile] = useState(null);
     const [pdfVisible, setPdfVisible] = useState(false);
     const [pdfUrl, setPdfUrl] = useState('');
@@ -81,7 +83,6 @@ const QLQT = () => {
     const [comment, setComment] = useState('');
 
     const [messageApi, contextHolder] = message.useMessage();
-    const currentRole = localStorage.getItem('role');
     // Hàm xử lý khi người dùng xác nhận nhận xét
     const handleConfirmComment = async () => {
         try {
@@ -103,12 +104,6 @@ const QLQT = () => {
         setIsCommentModalVisible(true);
     };
     // Xử lý khi chọn file
-    const handleFileChange = (info) => {
-        console.log("Upload info:", info);
-        if (info.fileList && info.fileList.length > 0) {
-            setFile(info.fileList[0].originFileObj);
-        }
-    };
 
     const fetchData = async () => {
         setLoading(true);
@@ -161,46 +156,6 @@ const QLQT = () => {
         }
     };
     // Xử lý submit form thêm phiên bản mới
-    const handleAddVersion = async () => {
-        try {
-            const values = await form.validateFields();
-            if (!file) {
-                messageApi.open({
-                    type: 'error',
-                    content: `Vui lòng tải lên file PDF!`,
-                });
-                return;
-            }
-            const formData = new FormData();
-            formData.append('QuyTrinhId', modalTitleId);
-            formData.append('TenQuyTrinh', modalTitle);
-            formData.append('PhienBan', values.PhienBan);
-            formData.append('NgayHieuLuc', values.NgayHieuLuc.format('YYYY-MM-DD'));
-            formData.append('File', file);
-            formData.append('CurrentUrl', window.location.href);
-
-            await axios.post(`${apiConfig.API_BASE_URL}/B8/themquytrinhversion`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-            messageApi.open({
-                type: 'success',
-                content: `Thêm phiên bản thành công!`,
-            });
-            fetchData();
-            setAddVersionModalVisible(false);
-            form.resetFields();
-            setFile(null);
-        } catch (errorInfo) {
-            console.log("Lỗi validate form:", errorInfo);
-            if (errorInfo.errorFields) {
-                errorInfo.errorFields.forEach(field => {
-                    message.error(field.errors[0]);
-                });
-            } else {
-                message.error(`Lỗi: ${errorInfo.message}`);
-            }
-        }
-    };
 
     const optionsSelect = Array.from(
         new Set(data.map((item) => item.TenQuyTrinh).filter(Boolean))
@@ -232,11 +187,19 @@ const QLQT = () => {
             title: 'Phiên Bản',
             dataIndex: 'PhienBan',
             key: 'PhienBan',
+            align: 'center',
+        },
+        {
+            title: 'Bộ phận ban hành',
+            dataIndex: 'BoPhanBanHanh',
+            key: 'BoPhanBanHanh',
+            align: 'center',
         },
         {
             title: 'File PDF',
             dataIndex: 'FilePDF',
             key: 'FilePDF',
+            align: 'center',
             render: (text, record) => {
                 if (record.PhienBan === null) {
                     return <span>Chưa có phiên bản</span>;
@@ -249,13 +212,24 @@ const QLQT = () => {
             title: 'Ngày Hiệu Lực',
             dataIndex: 'NgayHieuLuc',
             key: 'NgayHieuLuc',
+            align: 'center',
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
         {
             title: 'Ngày Tạo',
             dataIndex: 'NgayTao',
             key: 'NgayTao',
+            align: 'center',
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
+        },
+        {
+            title: 'Ghi chú',
+            key: 'GhiChu',
+            render: (_, record) => {
+                // Kiểm tra BoPhanGui có null không
+                const boPhanGuiArray = record.BoPhanGui ? record.BoPhanGui.split(',') : [];
+                return boPhanGuiArray.includes(record.BoPhan) ? 'Được gửi mail' : '';
+            }
         },
         {
             title: 'Chi Tiết',
@@ -275,7 +249,7 @@ const QLQT = () => {
     useEffect(() => {
         fetchData();
     }, []);
-
+    console.log(allData)
     // Hàm lọc để lấy phiên bản mới nhất cho mỗi QuyTrinh (theo QuyTrinhId)
     const getLatestVersions = (list) => {
         const grouped = {};
@@ -316,60 +290,7 @@ const QLQT = () => {
             setData(getLatestVersions(allData)); // Nếu không chọn gì, hiển thị toàn bộ
         }
     };
-    // Hàm render cột tùy thuộc vào role của người dùng và tên field cần xác nhận
-    const renderConfirmColumn = (text, record, field) => {
-        console.log("Duy", record)
-        let allowedField;
-        if (currentRole === "Trưởng phòng") {
-            allowedField = "NguoiPheDuyet";
-        } else if (currentRole === "Quản lý") {
-            allowedField = "NguoiKiemTra";
-        } else if (currentRole === "Nhân viên") {
-            allowedField = "NguoiLap";
-        }
-        if (field !== allowedField) {
-            return text;
-        }
-        if (text) {
-            return text;
-        }
-        return (
-            <Button type="primary" onClick={(e) => { e.stopPropagation(); confirmField(record, field) }}>
-                Xác nhận
-            </Button>
-        );
-    };
-    // Hàm xử lý xác nhận
-    const confirmField = async (record, field) => {
-        const HoTen = localStorage.getItem('HoTen');
-        const userId = localStorage.getItem('userId');
-        console.log(`Xác nhận ${field} cho phiên bản ${record.VersionId} của ${userId}`);
-        try {
-            await axios.post(`${apiConfig.API_BASE_URL}/B8/confirm`, {
-                VersionId: record.VersionId,
-                field, // Trường cần cập nhật
-                HoTen,
-                userId,
-            });
-            message.success(`Xác nhận ${field} thành công!`);
-            // Cập nhật lại state, ví dụ:
-            setAllData(prevData =>
-                prevData.map(item =>
-                    item.VersionId === record.VersionId ? { ...item, [field]: HoTen } : item
-                )
-            );
-            setData(getLatestVersions(allData.map(item =>
-                item.VersionId === record.VersionId ? { ...item, [field]: HoTen } : item
-            )));
-            setModalData(prevData =>
-                prevData.map(item =>
-                    item.VersionId === record.VersionId ? { ...item, [field]: HoTen } : item
-                )
-            );
-        } catch (error) {
-            message.error(error.response?.data?.message || `Lỗi xác nhận ${field}`);
-        }
-    };
+
     // Định nghĩa cột cho bảng trong modal hiển thị danh sách phiên bản
     const modalColumns = [
         {
@@ -406,23 +327,67 @@ const QLQT = () => {
             key: 'NgayTao',
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
+        {
+            title: 'Ghi chú',
+            key: 'GhiChu',
+            render: (_, record) => {
+                // Kiểm tra BoPhanGui có null không
+                const boPhanGuiArray = record.BoPhanGui ? record.BoPhanGui.split(',') : [];
+                return boPhanGuiArray.includes(record.BoPhan) ? 'Được gửi mail' : '';
+            }
+        }
     ];
+    const taiLieuGuiMail = allData.filter(record => {
+        const boPhanGuiArray = record.BoPhanGui ? record.BoPhanGui.split(',') : [];
+        return boPhanGuiArray.includes(record.BoPhan);
+    });
+
+    const soTaiLieuDaXem = taiLieuGuiMail.filter(record => record.TrangThai !== 'Chưa xem').length;
+    const soTaiLieuChuaXem = taiLieuGuiMail.filter(record => record.TrangThai === 'Chưa xem').length;
+    console.log(soTaiLieuChuaXem)
+    const piedata = [
+        { name: "Đã xem", value: soTaiLieuDaXem },
+        { name: "Chưa xem", value: soTaiLieuChuaXem },
+    ];
+    const COLORS = ["#0088FE", "#f63d3de0"];
     return (
-        <Layout style={{ minHeight: '100vh' }}>
+        <Layout style={{ minHeight: '100vh' }} classname="User">
             <AppHeader />
             <Content style={{ padding: 20 }}>
                 {contextHolder}
+
                 <Row gutter={[16, 16]}>
                     {/* Cột bên trái: ô tìm kiếm */}
                     <Col xs={24} sm={4}>
+                        <Card title="Tài liệu được nhận">
+                            <PieChart width={200} height={200}>
+                                <Pie
+                                    data={piedata}
+                                    cx="50%"
+                                    cy="50%"
+                                    outerRadius={80}
+                                    fill="#8884d8"
+                                    dataKey="value"
+                                    label
+                                >
+                                    {piedata.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index]} />
+                                    ))}
+                                </Pie>
+                                <TooltipRechart />
+                                <Legend />
+                            </PieChart>
+                        </Card>
+                        {/* </Col>
+                    <Col xs={24} sm={4}> */}
                         <Card>
-                            <Search
+                            {/* <Search
                                 placeholder="Nhập tên quy trình cần tìm"
                                 enterButton="Tìm"
                                 allowClear
                                 onSearch={onSearch}
                                 style={{ marginBottom: 16 }}
-                            />
+                            /> */}
                             <Select
                                 showSearch
                                 size="large"
@@ -455,9 +420,6 @@ const QLQT = () => {
                     visible={modalVisible}
                     onCancel={() => setModalVisible(false)}
                     footer={[
-                        <Button key="add" type="primary" onClick={() => setAddVersionModalVisible(true)}>
-                            Thêm Version
-                        </Button>,
                         <Button key="close" onClick={() => setModalVisible(false)}>
                             Đóng
                         </Button>
@@ -473,51 +435,6 @@ const QLQT = () => {
                         rowClassName={(record) => record.TrangThai === 'Chưa xem' ? 'not-viewed' : ''}
                     />
                     {/* Modal thêm phiên bản */}
-                    <Modal
-                        title="Thêm Version Mới"
-                        visible={addVersionModalVisible}
-                        onCancel={() => setAddVersionModalVisible(false)}
-                        footer={[
-                            <Button key="cancel" onClick={() => setAddVersionModalVisible(false)}>
-                                Hủy
-                            </Button>,
-                            <Button key="submit" type="primary" onClick={handleAddVersion}>
-                                Lưu
-                            </Button>
-                        ]}
-                    >
-                        <Form form={form} layout="vertical">
-                            <Form.Item
-                                label="Phiên Bản"
-                                name="PhienBan"
-                                rules={[{ required: true, message: 'Vui lòng nhập phiên bản!' }]}
-                            >
-                                <Input placeholder="Nhập số phiên bản" />
-                            </Form.Item>
-
-                            <Form.Item
-                                label="Ngày Hiệu Lực"
-                                name="NgayHieuLuc"
-                                rules={[{ required: true, message: 'Vui lòng chọn ngày hiệu lực!' }]}
-                            >
-                                <DatePicker format="YYYY-MM-DD" />
-                            </Form.Item>
-
-                            <Form.Item
-                                label="Tải lên file PDF"
-                                name="File"
-                                rules={[{ required: true, message: 'Vui lòng tải lên file PDF!' }]}
-                            >
-                                <Upload
-                                    beforeUpload={() => false}
-                                    onChange={handleFileChange}
-                                    accept=".pdf"
-                                >
-                                    <Button icon={<UploadOutlined />}>Chọn File</Button>
-                                </Upload>
-                            </Form.Item>
-                        </Form>
-                    </Modal>
                 </Modal>
                 {/* Modal nhập nhận xét */}
                 <Modal

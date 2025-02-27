@@ -1,6 +1,6 @@
 /* Tùy chỉnh màu nền của toàn bộ table */
 .Admin {
-    min-height: 100vh;
+    min-height: calc(100vh - 64px);
     background-color: #162f48;
 }
 
@@ -71,6 +71,11 @@
     color: #ffffff !important;
 }
 
+.modal-versions .ant-upload-list-item-name,
+.modal-versions .anticon-paper-clip {
+    color: #ffffff !important;
+}
+
 .form-add-version label {
     color: #ffffff !important;
 }
@@ -83,4 +88,8 @@
 .Admin .ant-table-filter-trigger.active {
     color: white !important;
     /* Khi filter được kích hoạt */
+}
+
+.Admin .ant-table-body {
+    scrollbar-color: white #001529;
 }
