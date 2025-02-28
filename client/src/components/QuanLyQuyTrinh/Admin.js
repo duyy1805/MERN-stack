@@ -25,7 +25,7 @@ import dayjs from 'dayjs';
 import apiConfig from '../../apiConfig.json';
 import ViewerPDF from './ViewerPDF';
 import { Link, useHistory } from "react-router-dom";
-import "./Admin.css";
+import style from "./Admin.module.css";
 
 const { Search } = Input;
 const { Header, Content } = Layout;
@@ -191,7 +191,7 @@ const Admin = () => {
             message.success("Thêm quy trình thành công!");
             setAddProcessModalVisible(false);
             processForm.resetFields();
-            fetchData();
+            await fetchData();
             setSelectedProcess(null);
         } catch (error) {
             message.error("Lỗi thêm quy trình: " + error.response?.data || error.message);
@@ -226,7 +226,7 @@ const Admin = () => {
             });
 
             messageApi.open({ type: 'success', content: `Thêm phiên bản thành công!` });
-            fetchData();
+            await fetchData();
             setAddVersionModalVisible(false);
             form.resetFields();
             setFile(null);
@@ -512,7 +512,7 @@ const Admin = () => {
     const soQuyTrinhKhacNhau = uniqueQuyTrinh.size;
 
     return (
-        <Layout className="Admin">
+        <Layout className={style.admin}>
             <Content style={{ padding: 10, backgroundColor: '#162f48' }}>
                 {contextHolder}
                 <Row gutter={[16, 16]}>
@@ -544,13 +544,17 @@ const Admin = () => {
                             />
                         </Card>
                     </Col>
+                    <Col xs={24} sm={4}>
+                        <Card style={{ backgroundColor: '#001529', border: 'none' }}>
+                            <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                <Button type="primary" onClick={() => setAddProcessModalVisible(true)}>Thêm quy trình mới</Button>
+                            </div>
+                        </Card>
+                    </Col>
                     {/* Bảng phiên bản mới nhất */}
                     <Col xs={24} sm={24}>
                         {selectedProcess && (
                             <Card style={{ backgroundColor: '#001529', border: 'none' }}>
-                                <div style={{ marginBottom: 16, textAlign: 'right' }}>
-                                    <Button type="primary" onClick={() => setAddProcessModalVisible(true)}>Thêm quy trình mới</Button>
-                                </div>
                                 {loading ? <Spin /> : (
                                     <Table
                                         dataSource={data}
@@ -580,7 +584,7 @@ const Admin = () => {
                             Đóng
                         </Button>
                     ]}
-                    className="modal-versions"
+                    className={style.modalVersions}
                     width={1000}
                     style={{ backgroundColor: '#001529' }}
                 >
@@ -589,7 +593,7 @@ const Admin = () => {
                         columns={modalVersionColumns}
                         rowKey="VersionId"
                         pagination={false}
-                        className="table-versions"
+                        className={style.tableVersions}
                         scroll={{ y: 55 * 9 }}
                         onRow={(record) => ({
                             onClick: () => { setModalVisible(false); handleViewPdf(record) }
@@ -600,7 +604,7 @@ const Admin = () => {
                         title="Thêm Version Mới"
                         visible={addVersionModalVisible}
                         onCancel={() => setAddVersionModalVisible(false)}
-                        className="modal-versions"
+                        className={style.modalVersions}
                         footer={[
                             <Button key="cancel" onClick={() => setAddVersionModalVisible(false)}>
                                 Hủy
@@ -610,7 +614,7 @@ const Admin = () => {
                             </Button>
                         ]}
                     >
-                        <Form form={form} layout="vertical" className="form-add-version">
+                        <Form form={form} layout="vertical" className={style.formAddVersion}>
                             <Form.Item
                                 label="Phiên Bản"
                                 name="PhienBan"
@@ -626,13 +630,13 @@ const Admin = () => {
                                 <DatePicker format="YYYY-MM-DD" />
                             </Form.Item>
                             <Form.Item
-                                label="Chọn Bộ Phận"
+                                label="Bộ phận được phân phối"
                                 name="BoPhanIds"
                                 rules={[{ required: true, message: 'Vui lòng chọn bộ phận!' }]}
                             >
                                 <Select
                                     mode="multiple"
-                                    placeholder="Chọn bộ phận"
+                                    placeholder="Bộ phận được phân phối"
                                     options={boPhanOptions} // Danh sách bộ phận lấy từ API
                                 />
                             </Form.Item>
@@ -660,7 +664,7 @@ const Admin = () => {
                     onCancel={() => setIsCommentModalVisible(false)}
                     okText="Xác nhận"
                     cancelText="Hủy"
-                    className="modal-versions"
+                    className={style.modalComment}
                 >
                     <p>Nhập nhận xét của bạn:</p>
                     <Input.TextArea
@@ -672,7 +676,7 @@ const Admin = () => {
                 </Modal>
                 {/* --- Modal trạng thái người dùng của phiên bản --- */}
                 <Modal
-                    className="modal-versions"
+                    className={style.modalVersions}
                     title="Trạng thái người nhận"
                     visible={statusModalVisible}
                     onCancel={() => setStatusModalVisible(false)}
@@ -685,9 +689,9 @@ const Admin = () => {
                 >
                     <Table
                         dataSource={statusData}
-                        className="table-versions"
+                        className={style.tableVersions}
                         scroll={{ y: 55 * 9 }}
-                        rowClassName={(record) => record.TrangThai === 'Chưa xem' ? 'not-viewed' : ''}
+                        rowClassName={(record) => record.TrangThai === 'Chưa xem' ? style.notViewed : ''}
                         columns={[
                             {
                                 title: 'Tên người dùng',
@@ -733,7 +737,7 @@ const Admin = () => {
                     title="Thêm Quy Trình Mới"
                     visible={addProcessModalVisible}
                     onCancel={() => setAddProcessModalVisible(false)}
-                    className="modal-versions"
+                    className={style.modalVersions}
                     footer={[
                         <Button key="cancel" onClick={() => setAddProcessModalVisible(false)}>
                             Hủy
@@ -743,7 +747,7 @@ const Admin = () => {
                         </Button>
                     ]}
                 >
-                    <Form form={processForm} className="form-add-version" layout="vertical">
+                    <Form form={processForm} className={style.formAddVersion} layout="vertical">
                         <Form.Item
                             label="Mã Quy Trình"
                             name="MaSo"
@@ -763,7 +767,10 @@ const Admin = () => {
                             name="BoPhanBanHanh"
                             rules={[{ required: true, message: 'Vui lòng nhập Bộ phận ban hành!' }]}
                         >
-                            <Input placeholder="Nhập bộ phận" />
+                            <Select
+                                placeholder="Chọn bộ phận ban hành"
+                                options={boPhanOptions} // Danh sách bộ phận lấy từ API
+                            />
                         </Form.Item>
                     </Form>
                 </Modal>

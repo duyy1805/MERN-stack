@@ -231,7 +231,7 @@ function Qr() {
             ),
             dataIndex: "KetQua",
             key: "KetQua",
-            width: "1%",
+            width: "10%",
             render: (text) => (
                 text ? <Tag color={text === "Đạt" ? "green" : text === 'Không đạt' ? 'red' : "yellow"}>{text}</Tag> : <Tag color="gray">Chưa kiểm tra</Tag>
             )
@@ -538,7 +538,7 @@ function Qr() {
                             columns={columns}
                             rowKey="NoiDungKiemTra"
                             pagination={false}
-                            scroll={{ x: 'max-content', y: 500 }}
+                            scroll={{ x: 1000, y: 500 }}
                         />
                     </div>
                 )}

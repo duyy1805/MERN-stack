@@ -4,16 +4,15 @@ import {
     UserOutlined,
     FileOutlined,
     DashboardOutlined,
+    FilePdfOutlined,
 } from "@ant-design/icons";
-import Dashboard from "./QLQT"; // Import component Dashboard
-import Admin from "./Admin";
-import ChartDasdboard from "./ChartDasdboard";
+import QLQT from "./QLQT";
 import { Link, useHistory } from "react-router-dom";
 
 const { Header, Sider, Content } = Layout;
 
-const AdminDashboard = () => {
-    const [selectedKey, setSelectedKey] = useState("dashboard");
+const User = () => {
+    const [selectedKey, setSelectedKey] = useState("QLQT");
 
     const history = useHistory();
     const handleLogout = () => {
@@ -37,17 +36,17 @@ const AdminDashboard = () => {
         </Menu>
     );
     const menuItems = [
-        { key: "dashboard", icon: <DashboardOutlined />, label: "Dashboard" },
-        { key: "ChartDasdboard", icon: <UserOutlined />, label: "ChartDasdboard" },
+        { key: "QLQT", icon: <FilePdfOutlined />, label: "Quy Trình" },
+        { key: "", icon: <FilePdfOutlined />, label: "Tài liệu kỹ thuật" },
         { key: "documents", icon: <FileOutlined />, label: "Documents" },
     ];
 
     const renderContent = () => {
         switch (selectedKey) {
-            case "dashboard":
-                return <Admin />;
-            case "ChartDasdboard":
-                return <ChartDasdboard />;
+            case "QLQT":
+                return <QLQT />;
+            // case "ChartDasdboard":
+            //     return <ChartDasdboard />;
             // case "documents":
             //     return <Documents />;
             default:
@@ -96,4 +95,4 @@ const AdminDashboard = () => {
     );
 };
 
-export default AdminDashboard;
+export default User;

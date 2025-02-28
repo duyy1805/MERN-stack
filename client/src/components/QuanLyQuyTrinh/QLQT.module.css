@@ -1,95 +1,88 @@
 /* Tùy chỉnh màu nền của toàn bộ table */
-.Admin {
+.admin {
     min-height: calc(100vh - 64px);
     background-color: #162f48;
 }
 
-
-.Admin .ant-table,
-.table-versions .ant-table {
+.admin :global(.ant-table),
+.tableVersions :global(.ant-table) {
     background: #001529;
     color: #ffffff;
 }
 
 /* Tùy chỉnh header của table */
-.Admin .ant-table-thead>tr>th,
-.table-versions .ant-table-thead>tr>th {
+.admin :global(.ant-table-thead > tr > th),
+.tableVersions :global(.ant-table-thead > tr > th) {
     background: #001529 !important;
     color: #ffffff !important;
     border-bottom: 1px solid #434343;
 }
 
 /* Tùy chỉnh các hàng dữ liệu */
-.Admin .ant-table-tbody>tr>td,
-.table-versions .ant-table-tbody>tr>td {
+.admin :global(.ant-table-tbody > tr > td),
+.tableVersions :global(.ant-table-tbody > tr > td) {
     background: #001529 !important;
     border-bottom: 1px solid #434343;
 }
 
 /* Nếu bạn muốn custom các hover row */
-.Admin .ant-table-tbody>tr:hover>td,
-.table-versions .ant-table-tbody>tr:hover>td {
+.admin :global(.ant-table-tbody > tr:hover > td),
+.tableVersions :global(.ant-table-tbody > tr:hover > td) {
     background: #002140 !important;
 }
 
-.Admin .ant-modal-content {
+/* Tùy chỉnh modal */
+.admin :global(.ant-modal-content),
+.modalVersions :global(.ant-modal-content) {
     background-color: #001529 !important;
     color: #ffffff !important;
 }
 
-.not-viewed {
+.notViewed {
     color: rgb(223, 94, 94);
 }
 
 /* Tùy chỉnh modal container */
-.modal-versions .ant-modal-content {
+.modalVersions :global(.ant-modal-content) {
     background-color: #001529 !important;
     color: #ffffff !important;
     border-radius: 4px;
 }
 
 /* Tùy chỉnh header của modal */
-.modal-versions .ant-modal-header {
+.modalVersions :global(.ant-modal-header) {
     background-color: #001529 !important;
     border-bottom: 1px solid #434343 !important;
 }
 
 /* Tùy chỉnh tiêu đề modal */
-.modal-versions .ant-modal-title {
+.modalVersions :global(.ant-modal-title) {
     color: #ffffff !important;
 }
 
 /* Tùy chỉnh body modal */
-.modal-versions .ant-modal-body {
+.modalVersions :global(.ant-modal-body) {
     background-color: #001529 !important;
     color: #ffffff !important;
 }
 
 /* Tùy chỉnh footer modal */
-.modal-versions .ant-modal-footer {
+.modalVersions :global(.ant-modal-footer) {
     background-color: #001529 !important;
     color: #ffffff !important;
 }
 
-.modal-versions .ant-upload-list-item-name,
-.modal-versions .anticon-paper-clip {
-    color: #ffffff !important;
-}
 
-.form-add-version label {
-    color: #ffffff !important;
-}
-
-.Admin .ant-table-filter-trigger {
+/* Tùy chỉnh icon filter */
+.admin :global(.ant-table-filter-trigger) {
     color: white !important;
-    /* Đổi màu icon filter */
 }
 
-.Admin .ant-table-filter-trigger.active {
+.admin :global(.ant-table-filter-trigger.active) {
     color: white !important;
-    /* Khi filter được kích hoạt */
 }
 
-.Admin .ant-table-body {
+/* Tùy chỉnh thanh cuộn trong bảng */
+.admin :global(.ant-table-body) {
     scrollbar-color: white #001529;
 }

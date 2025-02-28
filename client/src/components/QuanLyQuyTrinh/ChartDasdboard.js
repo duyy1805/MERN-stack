@@ -14,7 +14,7 @@ import dayjs from 'dayjs';
 import apiConfig from '../../apiConfig.json';
 import ViewerPDF from './ViewerPDF';
 import { Link, useHistory } from "react-router-dom";
-// import "./Admin.css";
+import style from "./Admin.module.css";
 
 const { Search } = Input;
 const { Header, Content } = Layout;
@@ -196,7 +196,7 @@ const ChartDasdboard = () => {
     const soQuyTrinhKhacNhau = uniqueQuyTrinh.size;
     const totalVersions = lineChartData.reduce((sum, item) => sum + item.count, 0);
     return (
-        <Layout className="Admin">
+        <Layout className={style.admin}>
             <Content style={{ padding: 10, backgroundColor: '#162f48' }}>
                 {contextHolder}
                 <Row gutter={[16, 16]}>
@@ -229,7 +229,10 @@ const ChartDasdboard = () => {
                             <ResponsiveContainer width="100%" height={200}>
                                 <LineChart data={lineChartData}>
                                     <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="date" />
+                                    <XAxis
+                                        dataKey="date"
+                                        tickFormatter={(date) => dayjs(date).format("DD/MM")}
+                                    />
                                     <YAxis />
                                     <RechartsTooltip />
                                     <Line type="monotone" dataKey="count" stroke="#8884d8" strokeWidth={2} />

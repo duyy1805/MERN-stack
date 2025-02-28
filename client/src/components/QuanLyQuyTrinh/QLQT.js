@@ -4,62 +4,18 @@ import {
     Upload, Form, DatePicker, Select, Layout, Menu, Dropdown, Avatar,
     Card
 } from 'antd';
-import { PieChart, Pie, Cell, Tooltip as TooltipRechart, Legend } from "recharts";
+import { PieChart, Pie, Cell, Tooltip as TooltipRechart, Legend, ResponsiveContainer } from "recharts";
 import { UploadOutlined, SettingOutlined, UserOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import apiConfig from '../../apiConfig.json';
 import ViewerPDF from './ViewerPDF';
 import { Link, useHistory } from "react-router-dom";
-// import './QLQT.css';
+import style from './QLQT.module.css';
+
 const { Search } = Input;
+
 const { Header, Content } = Layout;
-
-const AppHeader = () => {
-    const history = useHistory();
-    const handleLogout = () => {
-        // Xóa dữ liệu lưu trữ và chuyển hướng
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('role');
-        localStorage.removeItem('HoTen');
-        history.push('/login'); // chuyển hướng về trang login
-    };
-    const menu = (
-        <Menu>
-            <Menu.Item key="account">
-                <a href="/account">Tài khoản</a>
-            </Menu.Item>
-            <Menu.Item key="settings">
-                <a href="/settings">Cài đặt</a>
-            </Menu.Item>
-            <Menu.Item key="logout" onClick={handleLogout}>
-                Log Out
-            </Menu.Item>
-        </Menu>
-    );
-
-    return (
-        <Header style={{
-            background: "#001529",
-            display: 'flex',
-            height: '64px',
-            justifyContent: 'space-between',
-            padding: "0 20px 0 10px",
-            textAlign: "center",
-            color: "#fff",
-            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
-        }}>
-            <div style={{ fontSize: '20px', fontWeight: 'bold' }}>Quản lý quy trình</div>
-            <Dropdown overlay={menu} trigger={['click']}>
-                <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                    <Avatar icon={<UserOutlined />} />
-                    <span style={{ marginLeft: '8px' }}>{localStorage.getItem('HoTen')}</span>
-                    {/* <SettingOutlined style={{ marginLeft: '8px' }} /> */}
-                </div>
-            </Dropdown>
-        </Header>
-    );
-};
 
 const QLQT = () => {
     const [allData, setAllData] = useState([]); // tất cả phiên bản của các quy trình
@@ -174,25 +130,21 @@ const QLQT = () => {
             title: 'Tên Quy Trình',
             dataIndex: 'TenQuyTrinh',
             key: 'TenQuyTrinh',
+            width: '30%',
             render: (text) =>
-                text && text.length > 20 ? (
+                text && text.length > 50 ? (
                     <Tooltip title={text}>
-                        <span>{text.slice(0, 20)}...</span>
+                        <span>{text.slice(0, 50)}...</span>
                     </Tooltip>
                 ) : (
                     text
                 ),
         },
         {
-            title: 'Phiên Bản',
-            dataIndex: 'PhienBan',
-            key: 'PhienBan',
-            align: 'center',
-        },
-        {
             title: 'Bộ phận ban hành',
             dataIndex: 'BoPhanBanHanh',
             key: 'BoPhanBanHanh',
+            width: '15%',
             align: 'center',
         },
         {
@@ -205,7 +157,7 @@ const QLQT = () => {
                     return <span>Chưa có phiên bản</span>;
                 }
                 const downloadUrl = `${apiConfig.API_BASE_URL}/B8/downloadPDF?QuyTrinhVersionId=${record.VersionId}`;
-                return <div><a href={downloadUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>Tải PDF</a></div>;
+                return <div><a href={downloadUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{record.PhienBan}</a></div>;
             },
         },
         {
@@ -255,13 +207,14 @@ const QLQT = () => {
         const grouped = {};
         list.forEach(item => {
             const key = item.QuyTrinhId;
-            // So sánh phiên bản (giả sử PhienBan là kiểu int)
-            if (!grouped[key] || item.PhienBan > grouped[key].PhienBan) {
+            const version = parseFloat(item.PhienBan); // Chuyển đổi thành số
+
+            if (!grouped[key] || version > parseFloat(grouped[key].PhienBan)) {
                 grouped[key] = item;
             }
         });
         // Sắp xếp theo thứ tự giảm dần của PhienBan
-        return Object.values(grouped).sort((a, b) => b.PhienBan - a.PhienBan);
+        return Object.values(grouped).sort((a, b) => b.NgayTao - a.NgayTao);
     };
     // Hàm tìm kiếm theo tên quy trình (lọc trên dữ liệu phiên bản mới nhất)
     const onSearch = (value) => {
@@ -294,20 +247,16 @@ const QLQT = () => {
     // Định nghĩa cột cho bảng trong modal hiển thị danh sách phiên bản
     const modalColumns = [
         {
-            title: 'Phiên Bản',
-            dataIndex: 'PhienBan',
-            key: 'PhienBan',
-        },
-        {
-            title: 'File PDF',
+            title: 'Phiên bản',
             dataIndex: 'FilePDF',
             key: 'FilePDF',
+            align: "center",
             render: (text, record) => {
                 if (record.PhienBan === null) {
                     return <span>Chưa có phiên bản</span>;
                 }
-                const downloadUrl = `${apiConfig.API_BASE_URL}/B8/downloadPDF?QuyTrinhVersionId=${record.VersionId}`;
-                return <a href={downloadUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>Tải PDF</a>;
+                const downloadUrl = `${apiConfig.API_BASE_URL}/B8/downloadPDF?QuyTrinhVersionId=${record.QuyTrinhVersionId}`;
+                return <a href={downloadUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{record.PhienBan}</a>;
             },
         },
         {
@@ -316,15 +265,24 @@ const QLQT = () => {
             key: 'NhanXet',
         },
         {
+            title: 'Ngày xem',
+            dataIndex: 'NgayXem',
+            key: 'NgayXem',
+            align: "center",
+            render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
+        },
+        {
             title: 'Ngày Hiệu Lực',
             dataIndex: 'NgayHieuLuc',
             key: 'NgayHieuLuc',
+            align: "center",
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
         {
             title: 'Ngày Tạo',
             dataIndex: 'NgayTao',
             key: 'NgayTao',
+            align: "center",
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
         {
@@ -351,43 +309,36 @@ const QLQT = () => {
     ];
     const COLORS = ["#0088FE", "#f63d3de0"];
     return (
-        <Layout style={{ minHeight: '100vh' }} classname="User">
-            <AppHeader />
-            <Content style={{ padding: 20 }}>
+        <Layout className={style.admin}>
+            <Content style={{ padding: 10, backgroundColor: '#162f48' }}>
                 {contextHolder}
-
                 <Row gutter={[16, 16]}>
                     {/* Cột bên trái: ô tìm kiếm */}
-                    <Col xs={24} sm={4}>
+                    <Col xs={24} sm={8}>
                         <Card title="Tài liệu được nhận">
-                            <PieChart width={200} height={200}>
-                                <Pie
-                                    data={piedata}
-                                    cx="50%"
-                                    cy="50%"
-                                    outerRadius={80}
-                                    fill="#8884d8"
-                                    dataKey="value"
-                                    label
-                                >
-                                    {piedata.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index]} />
-                                    ))}
-                                </Pie>
-                                <TooltipRechart />
-                                <Legend />
-                            </PieChart>
+                            <ResponsiveContainer width="100%" height={100}>
+                                <PieChart >
+                                    <Pie
+                                        data={piedata}
+                                        cx="50%"
+                                        cy="50%"
+                                        outerRadius={40}
+                                        fill="#8884d8"
+                                        dataKey="value"
+                                        label
+                                    >
+                                        {piedata.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index]} />
+                                        ))}
+                                    </Pie>
+                                    <TooltipRechart />
+                                    <Legend layout="vertical" align="right" verticalAlign="middle" />
+                                </PieChart>
+                            </ResponsiveContainer>
                         </Card>
-                        {/* </Col>
-                    <Col xs={24} sm={4}> */}
-                        <Card>
-                            {/* <Search
-                                placeholder="Nhập tên quy trình cần tìm"
-                                enterButton="Tìm"
-                                allowClear
-                                onSearch={onSearch}
-                                style={{ marginBottom: 16 }}
-                            /> */}
+                    </Col>
+                    <Col xs={24} sm={8}>
+                        <Card >
                             <Select
                                 showSearch
                                 size="large"
@@ -400,16 +351,18 @@ const QLQT = () => {
                         </Card>
                     </Col>
                     {/* Cột bên phải: bảng danh sách phiên bản mới nhất */}
-                    <Col xs={24} sm={20}>
-                        <Card>
+                    <Col xs={24} sm={24}>
+                        <Card style={{ backgroundColor: '#001529', border: 'none' }}>
                             {loading ? <Spin /> : <Table
                                 dataSource={data}
                                 columns={columns}
                                 rowKey="VersionId"
+                                className={style.tableVersions}
+                                scroll={{ y: 55 * 9 }}
                                 onRow={(record) => ({
                                     onClick: () => handleViewPdf(record)
                                 })}
-                                rowClassName={(record) => record.TrangThai === 'Chưa xem' ? 'not-viewed' : ''}
+                                rowClassName={(record) => record.TrangThai === 'Chưa xem' ? style.notViewed : ''}
                             />}
                         </Card>
                     </Col>
@@ -419,6 +372,7 @@ const QLQT = () => {
                     title={modalTitle}
                     visible={modalVisible}
                     onCancel={() => setModalVisible(false)}
+                    className={style.modalVersions}
                     footer={[
                         <Button key="close" onClick={() => setModalVisible(false)}>
                             Đóng
@@ -430,15 +384,18 @@ const QLQT = () => {
                         dataSource={modalData}
                         columns={modalColumns}
                         rowKey="VersionId"
+                        className={style.tableVersions}
+                        scroll={{ y: 55 * 9 }}
                         pagination={false}
                         onRow={(record) => ({ onClick: () => { setModalVisible(false); handleViewPdf(record); } })}
-                        rowClassName={(record) => record.TrangThai === 'Chưa xem' ? 'not-viewed' : ''}
+                        rowClassName={(record) => record.TrangThai === 'Chưa xem' ? style.notViewed : ''}
                     />
                     {/* Modal thêm phiên bản */}
                 </Modal>
                 {/* Modal nhập nhận xét */}
                 <Modal
                     title="Nhập nhận xét"
+                    className={style.modalVersions}
                     visible={isCommentModalVisible}
                     onOk={handleConfirmComment}
                     onCancel={() => setIsCommentModalVisible(false)}
