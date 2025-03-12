@@ -61,10 +61,24 @@ const AppHeader = () => {
         </Header>
     );
 };
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+const COLORS = [
+    '#0088FE', '#00C49F', '#FFBB28', '#FF8042', // Màu cũ
+    '#1E1E1E', // Xám đậm
+    '#2E8B57', // Xanh lá đậm
+    '#9932CC', // Tím sẫm
+    '#8B0000', // Đỏ đậm
+    '#FF4500', // Cam lửa
+    '#191970', // Xanh navy
+    '#006400', // Xanh lá rừng
+    '#B8860B', // Vàng nâu
+    '#4682B4', // Xanh thép
+    '#D2691E'  // Nâu đất
+];
 const ChartDasdboard = () => {
-    const [allData, setAllData] = useState([]); // tất cả phiên bản của các quy trình
-    const [data, setData] = useState([]);         // phiên bản mới nhất của mỗi quy trình
+    const [allData, setAllData] = useState([]);
+    const [data, setData] = useState([]);
+    const [allDataTL, setAllDataTL] = useState([]);
+    const [dataTL, setDataTL] = useState([]);
     const [allProcessNames, setAllProcessNames] = useState([]);
     const [loading, setLoading] = useState(false);
 
@@ -73,16 +87,11 @@ const ChartDasdboard = () => {
     const [modalTitle, setModalTitle] = useState(''); // tên quy trình được chọn
     const [modalTitleId, setModalTitleId] = useState(''); // id quy trình được chọn
 
-    const [form] = Form.useForm();
-    const [processForm] = Form.useForm();
-    const [addProcessModalVisible, setAddProcessModalVisible] = useState(false);
-    const [addVersionModalVisible, setAddVersionModalVisible] = useState(false);
-    const [file, setFile] = useState(null);
-    const [pdfVisible, setPdfVisible] = useState(false);
-    const [pdfUrl, setPdfUrl] = useState('');
+
     const [chartData, setChartData] = useState([]);
     const [lineChartData, setLineChartData] = useState([]);
-
+    const [chartDataTL, setChartDataTL] = useState([]);
+    const [lineChartDataTL, setLineChartDataTL] = useState([]);
     // Modal nhận xét khi xem tài liệu
     const [isCommentModalVisible, setIsCommentModalVisible] = useState(false);
     const [currentRecord, setCurrentRecord] = useState(null);
@@ -117,7 +126,7 @@ const ChartDasdboard = () => {
                 acc[boPhan].value += 1;
                 return acc;
             }, {});
-            const formattedData = Object.values(groupedData);
+            const formattedData = Object.values(groupedData).sort((a, b) => a.name.localeCompare(b.name, 'vi'));;
             setChartData(formattedData);
             setAllProcessNames(names);
         } catch (error) {
@@ -127,7 +136,41 @@ const ChartDasdboard = () => {
         }
     };
 
+    const fetchDataTL = async () => {
+        setLoading(true);
+        try {
+            const res = await axios.get(`${apiConfig.API_BASE_URL}/B8/sanphamall`);
+            const list = res.data;
+            setAllDataTL(list);
+            console.log(list)
+            setDataTL(getLatestVersionsTL(list));
 
+            const names = Array.from(
+                new Set(list.map((item) => item.BoPhanBanHanh).filter(Boolean))
+            );
+            const groupedData = getLatestVersionsTL(list).reduce((acc, item) => {
+                const boPhan = item.TenSanPham || "Không xác định";
+                if (!acc[boPhan]) {
+                    acc[boPhan] = { name: boPhan, value: 0 };
+                }
+                acc[boPhan].value += 1;
+                return acc;
+            }, {});
+            const formattedData = Object.values(groupedData);
+
+            console.log(groupedData)
+            setChartDataTL(formattedData);
+            setAllProcessNames(names);
+        } catch (error) {
+            messageApi.open({
+                type: 'error',
+                content: `Lỗi lấy dữ liệu`,
+            });
+        } finally {
+            setLoading(false);
+            // setAllProcessNames_([]);
+        }
+    };
     const uniqueBoPhan = [...new Set(allData
         .map(item => item.BoPhan)
         .filter(bp => bp))] // Loại bỏ giá trị NULL hoặc rỗng
@@ -168,9 +211,40 @@ const ChartDasdboard = () => {
             setLineChartData(formattedLineChartData);
         }
     }, [allData]);
+    useEffect(() => {
+        if (allDataTL.length > 0) {
+            const homNay = dayjs();
+            const last7Days = Array.from({ length: 30 }, (_, i) =>
+                homNay.subtract(i, "day").format("YYYY-MM-DD")
+            ).reverse();
 
+            // Tạo Set để kiểm tra các QuyTrinhVersionId đã đếm theo từng ngày
+            const countedSet = new Set();
+            const processCountByDay = {};
+
+            allDataTL.forEach(record => {
+                if (!record.NgayTao || !record.TaiLieuId) return;
+                const ngayTao = dayjs(record.NgayTao).format("YYYY-MM-DD");
+                const uniqueKey = `${record.TaiLieuId}`;
+
+                if (last7Days.includes(ngayTao) && !countedSet.has(uniqueKey)) {
+                    countedSet.add(uniqueKey);
+                    processCountByDay[ngayTao] = (processCountByDay[ngayTao] || 0) + 1;
+                }
+            });
+
+            // Chuyển đổi dữ liệu thành mảng để hiển thị trên LineChart
+            const formattedLineChartData = last7Days.map(date => ({
+                date,
+                count: processCountByDay[date] || 0
+            }));
+
+            setLineChartDataTL(formattedLineChartData);
+        }
+    }, [allDataTL]);
     useEffect(() => {
         fetchData();
+        fetchDataTL();
     }, []);
 
     // Hàm lọc để lấy phiên bản mới nhất cho mỗi QuyTrinh (theo QuyTrinhId)
@@ -186,7 +260,19 @@ const ChartDasdboard = () => {
         // Sắp xếp theo thứ tự giảm dần của PhienBan
         return Object.values(grouped).sort((a, b) => b.PhienBan - a.PhienBan);
     };
+    const getLatestVersionsTL = (list) => {
+        const grouped = {};
+        list.forEach(item => {
+            const key = `${item.MaSanPham}-${item.TenTaiLieu}`;
+            const version = parseFloat(item.PhienBan); // Chuyển đổi thành số
 
+            if (!grouped[key] || version > parseFloat(grouped[key].PhienBan)) {
+                grouped[key] = item;
+            }
+        });
+        // Sắp xếp theo thứ tự giảm dần của PhienBan
+        return Object.values(grouped).sort((a, b) => b.NgayTao - a.NgayTao);
+    };
     const taiLieuMoi = allData.filter(record => {
         if (!record.NgayTao) return false;
         const ngayTao = dayjs(record.NgayTao);
@@ -195,18 +281,19 @@ const ChartDasdboard = () => {
     const uniqueQuyTrinh = new Set(taiLieuMoi.map(record => `${record.TenQuyTrinh}_${record.QuyTrinhVersionId}`));
     const soQuyTrinhKhacNhau = uniqueQuyTrinh.size;
     const totalVersions = lineChartData.reduce((sum, item) => sum + item.count, 0);
+    const totalVersionsTL = lineChartDataTL.reduce((sum, item) => sum + item.count, 0);
     return (
         <Layout className={style.admin}>
             <Content style={{ padding: 10, backgroundColor: '#162f48' }}>
                 {contextHolder}
                 <Row gutter={[16, 16]}>
-                    <Col xs={24} sm={8}>
+                    <Col xs={24} sm={10}>
                         <Card title="Thống kê quy trình" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
                             <ResponsiveContainer width="100%" height={200}>
                                 <PieChart>
                                     <Pie
                                         data={chartData}
-                                        cx={100}
+                                        cx={140}
                                         cy={100}
                                         innerRadius={60}
                                         outerRadius={80}
@@ -219,7 +306,10 @@ const ChartDasdboard = () => {
                                         ))}
                                     </Pie>
                                     <RechartsTooltip />
-                                    <Legend layout="vertical" align="right" verticalAlign="middle" />
+                                    <Legend layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{
+                                        maxHeight: 150, overflowY: "auto", scrollbarWidth: "thin",
+                                        scrollbarColor: "#FFFFFF #001529"
+                                    }} />
                                 </PieChart>
                             </ResponsiveContainer>
                         </Card>
@@ -240,10 +330,60 @@ const ChartDasdboard = () => {
                             </ResponsiveContainer>
                         </Card>
                     </Col>
-                    <Col xs={24} sm={8}>
+                    <Col xs={24} sm={6}>
                         <Card title="Tổng số lượng quy trình" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
                             <Typography.Title level={2} style={{ color: "#fff", textAlign: "center" }}>
                                 {data.length}
+                            </Typography.Title>
+                        </Card>
+                    </Col>
+                    <Col xs={24} sm={10}>
+                        <Card title="Thống kê sản phẩm" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
+                            <ResponsiveContainer width="100%" height={200}>
+                                <PieChart>
+                                    <Pie
+                                        data={chartDataTL}
+                                        cx={140}
+                                        cy={100}
+                                        innerRadius={60}
+                                        outerRadius={80}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                        label={({ value }) => value}
+                                    >
+                                        {chartDataTL.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <RechartsTooltip />
+                                    <Legend layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{
+                                        maxHeight: 150, overflowY: "auto", scrollbarWidth: "thin",
+                                        scrollbarColor: "#FFFFFF #001529"
+                                    }} />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </Card>
+                    </Col>
+                    <Col xs={24} sm={8}>
+                        <Card title={`Số lượng tài liệu mới: ${totalVersionsTL}`} headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
+                            <ResponsiveContainer width="100%" height={200}>
+                                <LineChart data={lineChartDataTL}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis
+                                        dataKey="date"
+                                        tickFormatter={(date) => dayjs(date).format("DD/MM")}
+                                    />
+                                    <YAxis />
+                                    <RechartsTooltip />
+                                    <Line type="monotone" dataKey="count" stroke="#8884d8" strokeWidth={2} />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </Card>
+                    </Col>
+                    <Col xs={24} sm={6}>
+                        <Card title="Tổng số lượng tài liệu" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
+                            <Typography.Title level={2} style={{ color: "#fff", textAlign: "center" }}>
+                                {dataTL.length}
                             </Typography.Title>
                         </Card>
                     </Col>

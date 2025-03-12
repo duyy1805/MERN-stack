@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import { Html5QrcodeScanner } from "html5-qrcode";
-import { Modal, Button, Table, Tag, message, Tooltip, Input, Select, Form } from "antd";
+import { Modal, Button, Table, Tag, message, Tooltip, Input, Select, Form, Card } from "antd";
 import { Link, useHistory } from "react-router-dom";
 import axios from "axios";
 import 'antd/dist/reset.css';
@@ -11,6 +11,7 @@ import * as XLSX from 'xlsx';
 import domtoimage from 'dom-to-image';
 import { createRoot } from "react-dom/client";
 import moment from "moment";
+import { PieChart, Pie, Cell, Tooltip as RechartTooltip, Legend, ResponsiveContainer } from "recharts";
 
 const API_URL = `${apiConfig.API_BASE_URL}/b2/thietbi`;
 const API_ADD_DEVICE = `${apiConfig.API_BASE_URL}/b2/insertthietbi`; // API thêm thiết bị mới
@@ -29,15 +30,17 @@ function Qr() {
     const [messageApi, contextHolder] = message.useMessage();
     const [form] = Form.useForm();
     const { Option } = Select;
-
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const history = useHistory();
 
 
     const exportToExcel = async (devices) => {
         const wb = XLSX.utils.book_new();
         const wsData = [];
-
-        for (const device of devices) {
+        const uniqueDevices = Array.from(new Map(devices.map(d =>
+            [`${d.LoaiPhuongTien}-${d.ViTri}`, d]
+        )).values());
+        for (const device of uniqueDevices) {
             const qrCanvas = document.createElement('canvas');
             const qrCode = document.createElement('div');
 
@@ -352,25 +355,53 @@ function Qr() {
             render: (text) => text || "Không xác định",
         },
         {
+            title: "Trạng thái",
+            dataIndex: "TrangThai",
+            key: "TrangThai",
+            filters: [
+                { text: "Đạt", value: "Đạt" },
+                { text: "Không đạt", value: "Không đạt" },
+                { text: "Chờ xử lý", value: "Chờ xử lý" },
+            ],
+            onFilter: (value, record) => record.TrangThai === value,
+            sorter: (a, b) => {
+                const order = ["Chờ xử lý", "Không đạt", "Đạt"];
+                return order.indexOf(a.TrangThai) - order.indexOf(b.TrangThai);
+            },
+            render: (text) => {
+                let color = text === "Đạt" ? "green" : text === "Chờ xử lý" ? "orange" : "red";
+                return <Tag color={color}>{text}</Tag>;
+            },
+        },
+        {
             title: "QR Code",
             dataIndex: "QRCode",
             key: "QRCode",
+            align: "center",
             render: (_, record) => <QRCodeCanvas value={generateQRCode(record)} size={64} />,
         },
         {
             title: "Hành động",
             key: "action",
+            align: "center",
             render: (_, record) => (
-                <Button
-                    type="primary"
-                    danger
-                    onClick={() => handleDeleteDevice(record.IDThietBi)}
-                >
+                <Button type="primary" danger onClick={() => handleDeleteDevice(record.IDThietBi)}>
                     Xóa
                 </Button>
             ),
         },
     ];
+
+    const getTrangThaiThietBi = (IDThietBi) => {
+        const items = devices.filter(d => d.IDThietBi === IDThietBi);
+        const allPending = items.every(d => d.KetQua === "Chờ xử lý");
+        const hasFailed = items.some(d => d.KetQua === "Không đạt");
+
+        if (hasFailed) return "Không đạt";
+        if (allPending) return "Chờ xử lý";
+        return "Đạt";
+    };
+
 
     // Xử lý submit Form để thêm thiết bị
     const onFinish = async (values) => {
@@ -389,20 +420,66 @@ function Qr() {
                 content: `Không thể thêm thiết bị.`,
             });
         }
-    };
-    // const handleAddDevice = async () => {
-    //     try {
-    //         const response = await axios.post(API_ADD_DEVICE, newDevice);
-    //         message.success("Thêm thiết bị thành công!");
-    //         fetchDevices();  // Gọi lại API để cập nhật danh sách thiết bị
-    //         setAddDeviceModalVisible(false);  // Đóng modal thêm thiết bị
-    //         setNewDevice({ LoaiPhuongTien: "", ViTri: "", TanSuat: "" }); // Reset form
-    //     } catch (error) {
-    //         console.error("Lỗi khi thêm thiết bị:", error);
-    //         message.error("Không thể thêm thiết bị.");
-    //     }
-    // };
+    }
+    const getDevicesSummary = () => {
+        const summary = devices.reduce((acc, item) => {
+            const { IDThietBi, KetQua } = item;
 
+            if (!acc[IDThietBi]) {
+                acc[IDThietBi] = { IDThietBi, KetQua: "Đạt" };
+            }
+
+            if (KetQua === "Chờ xử lý" || KetQua === "Không đạt") {
+                acc[IDThietBi].KetQua = "Không đạt";
+            }
+
+            const items = devices.filter(d => d.IDThietBi === IDThietBi);
+            const allPending = items.every(d => d.KetQua === "Chờ xử lý");
+            const hasFailed = items.some(d => d.KetQua === "Không đạt");
+
+            if (hasFailed) acc[IDThietBi].KetQua = "Không đạt";
+            else if (allPending) acc[IDThietBi].KetQua = "Chờ xử lý";
+            else acc[IDThietBi].KetQua = "Đạt";
+
+            return acc;
+        }, {});
+
+        const counts = { Dat: 0, KhongDat: 0, ChoXuLy: 0 };
+
+        Object.values(summary).forEach(({ KetQua }) => {
+            if (KetQua === "Đạt") counts.Dat++;
+            else if (KetQua === "Không đạt") counts.KhongDat++;
+            else if (KetQua === "Chờ xử lý") counts.ChoXuLy++;
+        });
+
+        return counts;
+    };
+    console.log(getDevicesSummary())
+    const PieChartComponent = () => {
+        const counts = getDevicesSummary();
+
+        const data = [
+            { name: "Đạt", value: counts.Dat },
+            { name: "Không đạt", value: counts.KhongDat },
+            { name: "Chờ xử lý", value: counts.ChoXuLy },
+        ];
+
+        const COLORS = ["#28a745", "#dc3545", "#ffc107"];
+
+        return (
+            <ResponsiveContainer width={400} height={300}>
+                <PieChart >
+                    <Pie data={data} cx="50%" cy="50%" outerRadius={100} label={({ value }) => value} paddingAngle={5} dataKey="value">
+                        {data.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index]} />
+                        ))}
+                    </Pie>
+                    <RechartTooltip />
+                    <Legend layout="vertical" align="right" verticalAlign="middle" />
+                </PieChart>
+            </ResponsiveContainer>
+        );
+    };
     return (
         <div className="Qr">
             {contextHolder}
@@ -421,6 +498,20 @@ function Qr() {
                 </Button>
             </div>
             <div style={{ display: "flex", justifyContent: "center", marginTop: 20 }}>
+                <Button type="primary" onClick={() => setIsModalOpen(true)}>
+                    Thống kê kiểm tra
+                </Button>
+            </div>
+            <Modal
+                title="Thống kê kiểm tra thiết bị"
+                open={isModalOpen}
+                onCancel={() => setIsModalOpen(false)}
+                footer={null}
+                width={500}
+            >
+                <PieChartComponent />
+            </Modal>
+            <div style={{ display: "flex", justifyContent: "center", marginTop: 20 }}>
                 <Button color="primary" variant="filled" onClick={handleLogout}>
                     Sign out
                 </Button>
@@ -432,7 +523,7 @@ function Qr() {
                 title="Danh Sách Thiết Bị"
                 open={showDeviceList}
                 onCancel={() => setShowDeviceList(false)}
-                width={window.innerWidth < 768 ? "100%" : "60%"}
+                width={window.innerWidth < 768 ? "100%" : "70%"}
                 footer={[
                     <Button key="export" onClick={() => exportToExcel(devices)}>
                         Xuất Excel
@@ -453,13 +544,14 @@ function Qr() {
                                 MaThietBi: MaThietBi,
                                 LoaiPhuongTien: deviceGroup?.LoaiPhuongTien,
                                 ViTri: deviceGroup?.ViTri,
+                                TrangThai: getTrangThaiThietBi(deviceGroup?.IDThietBi),
                                 QRCode: deviceGroup
                             };
                         })}
                         // style={{ width: 1000 }}
                         columns={columns_}
                         pagination={false}
-                        scroll={{ x: 'max-content', y: 500 }}
+                        scroll={{ x: 1000, y: 500 }}
                     />
                 </div>
             </Modal>

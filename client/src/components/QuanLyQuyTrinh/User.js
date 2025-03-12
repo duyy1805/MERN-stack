@@ -7,6 +7,7 @@ import {
     FilePdfOutlined,
 } from "@ant-design/icons";
 import QLQT from "./QLQT";
+import QLTL from "./QLTL";
 import { Link, useHistory } from "react-router-dom";
 
 const { Header, Sider, Content } = Layout;
@@ -36,17 +37,17 @@ const User = () => {
         </Menu>
     );
     const menuItems = [
-        { key: "QLQT", icon: <FilePdfOutlined />, label: "Quy Trình" },
-        { key: "", icon: <FilePdfOutlined />, label: "Tài liệu kỹ thuật" },
-        { key: "documents", icon: <FileOutlined />, label: "Documents" },
+        { key: "QLQT", icon: <DashboardOutlined />, label: "Quy trình" },
+        { key: "QLTL", icon: <FileOutlined />, label: "Tài liệu kỹ thuật" },
+        // { key: "ChartDasdboard", icon: <UserOutlined />, label: "ChartDasdboard" },
     ];
 
     const renderContent = () => {
         switch (selectedKey) {
             case "QLQT":
                 return <QLQT />;
-            // case "ChartDasdboard":
-            //     return <ChartDasdboard />;
+            case "QLTL":
+                return <QLTL />;
             // case "documents":
             //     return <Documents />;
             default:

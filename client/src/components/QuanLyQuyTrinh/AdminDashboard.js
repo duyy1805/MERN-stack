@@ -7,13 +7,14 @@ import {
 } from "@ant-design/icons";
 import Dashboard from "./QLQT"; // Import component Dashboard
 import Admin from "./Admin";
+import Admin_SP from "./Admin_SP";
 import ChartDasdboard from "./ChartDasdboard";
 import { Link, useHistory } from "react-router-dom";
 
 const { Header, Sider, Content } = Layout;
 
 const AdminDashboard = () => {
-    const [selectedKey, setSelectedKey] = useState("dashboard");
+    const [selectedKey, setSelectedKey] = useState("ChartDasdboard");
 
     const history = useHistory();
     const handleLogout = () => {
@@ -37,9 +38,9 @@ const AdminDashboard = () => {
         </Menu>
     );
     const menuItems = [
-        { key: "dashboard", icon: <DashboardOutlined />, label: "Dashboard" },
         { key: "ChartDasdboard", icon: <UserOutlined />, label: "ChartDasdboard" },
-        { key: "documents", icon: <FileOutlined />, label: "Documents" },
+        { key: "dashboard", icon: <DashboardOutlined />, label: "Quy trình" },
+        { key: "documents", icon: <FileOutlined />, label: "Tài liệu sản phẩm" },
     ];
 
     const renderContent = () => {
@@ -48,8 +49,8 @@ const AdminDashboard = () => {
                 return <Admin />;
             case "ChartDasdboard":
                 return <ChartDasdboard />;
-            // case "documents":
-            //     return <Documents />;
+            case "documents":
+                return <Admin_SP />;
             default:
                 return <h2>Welcome to Admin Panel</h2>;
         }

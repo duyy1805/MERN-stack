@@ -95,3 +95,10 @@
 .admin :global(.ant-table-body) {
     scrollbar-color: white #001529;
 }
+
+.filterDropdown {
+    width: 200px !important;
+    min-width: 200px !important;
+    max-width: 200px !important;
+    padding: 8px;
+}

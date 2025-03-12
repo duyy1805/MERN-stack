@@ -83,6 +83,6 @@
 }
 
 /* Tùy chỉnh thanh cuộn trong bảng */
-.admin :global(.ant-table-body) {
+:global(.ant-table-body) {
     scrollbar-color: white #001529;
 }

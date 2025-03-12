@@ -119,7 +119,23 @@ const QLQT = () => {
         label: uniqueName,
         value: uniqueName,
     }));
+    const createFilters = (key) => {
+        const uniqueValues = [...new Set(data.map((item) => item[key]))];
+        return uniqueValues.map((value) => ({
+            text: value,
+            value,
+        }));
+    };
 
+    const uniqueBoPhan = [...new Set(allData
+        .map(item => item.BoPhan)
+        .filter(bp => bp))] // Loại bỏ giá trị NULL hoặc rỗng
+
+    const boPhanOptions = uniqueBoPhan.map(bp => ({
+        value: bp,
+        label: bp
+    }));
+    const LPTFilters = createFilters('BoPhanBanHanh');
     const columns = [
         {
             title: 'Mã Quy Trình',
@@ -146,6 +162,9 @@ const QLQT = () => {
             key: 'BoPhanBanHanh',
             width: '15%',
             align: 'center',
+            filters: LPTFilters,
+            filterSearch: true,
+            onFilter: (value, record) => record.BoPhanBanHanh.includes(value),
         },
         {
             title: 'File PDF',

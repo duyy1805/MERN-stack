@@ -118,7 +118,7 @@ const SignIn = () => {
                                 name="email"
                                 rules={[{ required: true, message: "Please input your username!" }]}
                             >
-                                <Input placeholder="Username" />
+                                <Input placeholder="Username" style={{ fontSize: 16 }} />
                             </Form.Item>
 
                             <Form.Item
@@ -126,7 +126,7 @@ const SignIn = () => {
                                 name="password"
                                 rules={[{ required: true, message: "Please input your password!" }]}
                             >
-                                <Input.Password placeholder="Password" />
+                                <Input.Password placeholder="Password" style={{ fontSize: 16 }} />
                             </Form.Item>
 
                             <Form.Item name="remember" valuePropName="checked">

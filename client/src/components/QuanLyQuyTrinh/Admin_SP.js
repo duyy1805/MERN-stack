@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Row,
     Col,
@@ -38,6 +38,7 @@ const EditableRow = ({ index, ...props }) => {
         </Form>
     );
 };
+
 const EditableCell = ({
     editing,
     dataIndex,
@@ -64,7 +65,6 @@ const EditableCell = ({
         </td>
     );
 };
-
 const AppHeader = () => {
     const history = useHistory();
     const handleLogout = () => {
@@ -96,7 +96,7 @@ const AppHeader = () => {
             background: '#fff',
             padding: '0 20px'
         }}>
-            <div style={{ fontSize: '20px', fontWeight: 'bold' }}>Quản lý quy trình</div>
+            <div style={{ fontSize: '20px', fontWeight: 'bold' }}>Quản lý sản phẩm</div>
             <Dropdown overlay={menu} trigger={['click']}>
                 <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                     <Avatar icon={<UserOutlined />} />
@@ -107,44 +107,23 @@ const AppHeader = () => {
         </Header>
     );
 };
-const SELECT_ALL_OPTION = { label: "Select All", value: "_SELECT_ALL_OPTION" };
 
-function useSelectAllOption(options) {
-    const optionsWithAllOption = useMemo(() => [SELECT_ALL_OPTION, ...options], [
-        options
-    ]);
-
-    /** pass this to Form.Item's getValueFromEvent prop */
-    const getValueFromEvent = useCallback(
-        (value, selections) => {
-            if (!selections?.length) return selections;
-            if (!selections?.some((s) => s.value === SELECT_ALL_OPTION.value)) {
-                return selections;
-            }
-            const labelInValue = typeof value[0]?.label === "string";
-            // if "Select All" option selected, set value to all options
-            // also keep labelInValue in consideration
-            return labelInValue ? options : options.map((o) => o.value);
-        },
-        [options]
-    );
-
-    return [getValueFromEvent, optionsWithAllOption];
-}
-const Admin = () => {
-    const [allData, setAllData] = useState([]); // tất cả phiên bản của các quy trình
-    const [data, setData] = useState([]);         // phiên bản mới nhất của mỗi quy trình
+const Admin_SP = () => {
+    const [allData, setAllData] = useState([]); // tất cả phiên bản của các sản phẩm
+    const [data, setData] = useState([]);         // phiên bản mới nhất của mỗi sản phẩm
     const [allProcessNames, setAllProcessNames] = useState([]);
     const [allProcessNames_, setAllProcessNames_] = useState([]);
     const [loading, setLoading] = useState(false);
 
     const [modalVisible, setModalVisible] = useState(false);
-    const [modalData, setModalData] = useState([]); // dữ liệu các version của quy trình được chọn (mỗi phiên bản duy nhất)
-    const [modalTitle, setModalTitle] = useState(''); // tên quy trình được chọn
-    const [modalTitleId, setModalTitleId] = useState(''); // id quy trình được chọn
+    const [modalData, setModalData] = useState([]); // dữ liệu các version của sản phẩm được chọn (mỗi phiên bản duy nhất)
+    const [modalTitle, setModalTitle] = useState(''); // tên sản phẩm được chọn
+    const [modalTitleId, setModalTitleId] = useState(''); // id sản phẩm được chọn
+    const [bPN, setBPN] = useState('');
 
     const [form] = Form.useForm();
     const [processForm] = Form.useForm();
+
     const [formEdit] = Form.useForm();
     const [editingKey, setEditingKey] = useState("");
 
@@ -155,8 +134,6 @@ const Admin = () => {
     const [pdfUrl, setPdfUrl] = useState('');
     const [selectedProcess, setSelectedProcess] = useState(null);
     const [selectedProcess_, setSelectedProcess_] = useState(null);
-    const [selectedBoPhan, setSelectedBoPhan] = useState([]);
-
     // Modal nhận xét khi xem tài liệu
     const [isCommentModalVisible, setIsCommentModalVisible] = useState(false);
     const [currentRecord, setCurrentRecord] = useState(null);
@@ -168,11 +145,11 @@ const Admin = () => {
 
     const [messageApi, contextHolder] = message.useMessage();
     const currentRole = localStorage.getItem('role');
+    const isEditing = (record) => record.key === editingKey;
 
-    const isEditing = (record) => record.QuyTrinhId === editingKey;
     const edit = (record) => {
         formEdit.setFieldsValue({ ...record });
-        setEditingKey(record.QuyTrinhId);
+        setEditingKey(record.key);
     };
 
     const cancel = () => {
@@ -182,13 +159,13 @@ const Admin = () => {
     const save = async (key) => {
         try {
             const row = await formEdit.validateFields();
-            const updatedData = { ...row, Id: key };
+            const updatedData = { ...row, SanPhamId: key };
             console.log(updatedData)
-            const response = await axios.put(`${apiConfig.API_BASE_URL}/B8/capnhatquytrinh`, updatedData);
+            const response = await axios.put(`${apiConfig.API_BASE_URL}/B8/capnhatsanpham`, updatedData);
             if (response.status === 200) {
                 setData((prevData) =>
                     prevData.map((item) =>
-                        item.QuyTrinhId === key ? { ...item, ...updatedData } : item
+                        item.SanPhamId === key ? { ...item, ...updatedData } : item
                     )
                 );
             }
@@ -203,7 +180,7 @@ const Admin = () => {
             const userId = localStorage.getItem('userId');
             await axios.post(`${apiConfig.API_BASE_URL}/B8/markAsViewed`, {
                 NguoiDungId: parseInt(userId),
-                QuyTrinhVersionId: currentRecord.VersionId,
+                TaiLieuId: currentRecord.VersionId,
                 NhanXet: comment
             });
             messageApi.open({ type: 'success', content: `Đã đánh dấu tài liệu là đã xem và ghi nhận nhận xét!` });
@@ -222,7 +199,6 @@ const Admin = () => {
 
     // Xử lý khi chọn file
     const handleFileChange = (info) => {
-        console.log("Upload info:", info);
         if (info.fileList && info.fileList.length > 0) {
             setFile(info.fileList[0].originFileObj);
         }
@@ -231,7 +207,7 @@ const Admin = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const res = await axios.get(`${apiConfig.API_BASE_URL}/B8/quytrinhall`);
+            const res = await axios.get(`${apiConfig.API_BASE_URL}/B8/sanphamall`);
             const list = res.data;
             setAllData(list);
             setData(getLatestVersions(list));
@@ -247,7 +223,6 @@ const Admin = () => {
             });
         } finally {
             setLoading(false);
-
             // setAllProcessNames_([]);
         }
     };
@@ -263,7 +238,7 @@ const Admin = () => {
         }
         else {
             try {
-                const url = `${apiConfig.API_BASE_URL}/B8/viewPDF?QuyTrinhVersionId=${record.QuyTrinhVersionId}`;
+                const url = `${apiConfig.API_BASE_URL}/B8/viewTLPDF?TaiLieuId=${record.TaiLieuId}`;
                 setPdfUrl(url);
                 setPdfVisible(true);
             } catch (error) {
@@ -275,27 +250,40 @@ const Admin = () => {
         }
     };
 
-    // Xử lý submit form thêm quy trình mới
     const handleAddProcess = async () => {
         try {
             const values = await processForm.validateFields();
-            // Gọi API thêm quy trình
-            await axios.post(`${apiConfig.API_BASE_URL}/B8/themquytrinh`, values);
-            messageApi.open({ type: 'success', content: `Thêm quy trình thành công!` });
+            const requestData = {
+                KhachHang: values.KhachHang,
+                DongHang: values.DongHang,
+                MaCC: values.MaCC,
+                MaModel: values.MaModel,
+                MaSanPham: values.MaSanPham,
+                TheLoai: values.TheLoai,
+                TenSanPham: values.TenSanPham,
+                BoPhanIds: values.BoPhanIds // Dữ liệu mảng
+            };
+
+            // Gọi API với JSON
+            await axios.post(`${apiConfig.API_BASE_URL}/B8/themsanpham`, requestData, {
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            messageApi.open({ type: 'success', content: `Thêm sản phẩm thành công!` });
             setAddProcessModalVisible(false);
             processForm.resetFields();
             await fetchData();
         } catch (error) {
             messageApi.open({
                 type: 'error',
-                content: `Lỗi thêm quy trình`,
+                content: `Lỗi thêm sản phẩm`,
             });
         }
     };
     const handleSendMail = async (record) => {
         try {
-            const response = await axios.post(`${apiConfig.API_BASE_URL}/B8/guimailquytrinhversion`, {
-                QuyTrinhVersionId: record.QuyTrinhVersionId,
+            const response = await axios.post(`${apiConfig.API_BASE_URL}/B8/guimailtailieu`, {
+                TaiLieuId: record.TaiLieuId,
                 BoPhan: record.BoPhan,  // Chỉ gửi cho bộ phận này
                 CurrentUrl: window.location.href
             });
@@ -315,6 +303,7 @@ const Admin = () => {
             console.log("Lỗi khi gửi mail: " + (error.response?.data || error.message));
         }
     };
+
     const handleAddVersion = async () => {
         try {
             setLoading(true);
@@ -323,22 +312,23 @@ const Admin = () => {
                 messageApi.open({ type: 'error', content: `Vui lòng tải lên file PDF!` });
                 return;
             }
-
             const formData = new FormData();
-            formData.append('QuyTrinhId', modalTitleId);
-            formData.append('TenQuyTrinh', modalTitle);
+            formData.append('SanPhamId', modalTitleId);
+            formData.append('TenTaiLieu', values.TenTaiLieu);
+            formData.append('BoPhanBanHanh', values.BoPhanBanHanh);
+            formData.append('MuaSanPham', values.MuaSanPham);
             formData.append('PhienBan', values.PhienBan);
             formData.append('NgayHieuLuc', values.NgayHieuLuc.format('YYYY-MM-DD'));
             formData.append('File', file);
             formData.append('CurrentUrl', window.location.href);
-            values.BoPhanIds.forEach(id => formData.append('BoPhanIds', id));
+            formData.append('BoPhanIds', bPN);
 
             // Log tất cả dữ liệu trong FormData
             console.log("📌 Dữ liệu FormData:");
             for (let pair of formData.entries()) {
                 console.log(`${pair[0]}: ${pair[1]}`);
             }
-            await axios.post(`${apiConfig.API_BASE_URL}/B8/themquytrinhversion`, formData, {
+            await axios.post(`${apiConfig.API_BASE_URL}/B8/themtailieusanpham`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
@@ -359,12 +349,11 @@ const Admin = () => {
         }
     };
 
-    const handleDeleteVersion = async (QuyTrinhVersionId) => {
+    const handleDeleteVersion = async (TaiLieuId) => {
         try {
-            console.log(QuyTrinhVersionId)
             setLoading(true);
-            await axios.post(`${apiConfig.API_BASE_URL}/B8/xoaphienban`, {
-                QuyTrinhVersionId
+            await axios.post(`${apiConfig.API_BASE_URL}/B8/xoatailieu`, {
+                TaiLieuId
             });
             messageApi.open({ type: 'success', content: "Xóa phiên bản thành công!" });
             await fetchData(); // Cập nhật danh sách sau khi xóa
@@ -379,14 +368,14 @@ const Admin = () => {
         }
     };
 
-    const handleDeleteQuyTrinh = async (QuyTrinhId) => {
+    const handleDeleteQuyTrinh = async (SanPhamId) => {
         try {
 
             setLoading(true);
-            await axios.post(`${apiConfig.API_BASE_URL}/B8/xoaquytrinh`, {
-                QuyTrinhId
+            await axios.post(`${apiConfig.API_BASE_URL}/B8/xoasanpham`, {
+                SanPhamId
             });
-            messageApi.open({ type: 'success', content: "Xóa quy trình thành công!" });
+            messageApi.open({ type: 'success', content: "Xóa sản phẩm thành công!" });
             await fetchData(); // Cập nhật danh sách sau khi xóa
 
         } catch (error) {
@@ -401,7 +390,7 @@ const Admin = () => {
 
 
     const optionsSelect = Array.from(
-        new Set(data.map((item) => item.TenQuyTrinh).filter(Boolean))
+        new Set(data.map((item) => item.TenSanPham).filter(Boolean))
     ).map((uniqueName) => ({
         label: uniqueName,
         value: uniqueName,
@@ -423,81 +412,124 @@ const Admin = () => {
         value: bp,
         label: bp
     }));
-    const [getValueFromEvent, optionsWithAllOption] = useSelectAllOption(boPhanOptions);
+    const khachHangOptions = [
+        { value: "Dek", label: "Dek" },
+        { value: "Ikea", label: "Ikea" }
+    ];
+    const dongHangOptions = [
+        { value: "Dek", label: "Dek" },
+        { value: "Ikea", label: "Ikea" }
+    ];
     const LPTFilters = createFilters('BoPhanBanHanh');
-    const LPTFilters_TenQuyTrinh = createFilters('TenQuyTrinh');
-    // Các cột cho bảng chính (phiên bản mới nhất của mỗi quy trình)
+    const LPTFilters_TenSanPham = createFilters('TenSanPham');
+    const CCCodeFilters = createFilters('MaCC')
+    const groupedData = Object.values(
+        data.reduce((acc, item) => {
+            const key = `${item.MaSanPham}-${item.TenSanPham}`;
+
+            if (!acc[key]) {
+                acc[key] = {
+                    ...item,
+                    key,  // Thêm key để React không bị lỗi render
+                    subItems: []
+                };
+            }
+
+            // Thêm dữ liệu vào children (tránh trùng dòng cha)
+            acc[key].subItems.push({
+                ...item,
+                key: `${item.TaiLieuId}-${item.NguoiDungId}`
+            });
+
+            return acc;
+        }, {})
+    );
+
+
     const columns = [
         {
-            title: 'Mã Quy Trình',
-            dataIndex: 'MaSo',
-            key: 'MaSo',
+            title: "Khách hàng",
+            dataIndex: "KhachHang",
+            key: "KhachHang",
             editable: true,
         },
         {
-            title: 'Tên Quy Trình',
-            dataIndex: 'TenQuyTrinh',
-            key: 'TenQuyTrinh',
-            width: '25%',
+            title: "Dòng hàng",
+            dataIndex: "DongHang",
+            key: "DongHang",
             editable: true,
-            filters: LPTFilters_TenQuyTrinh,
+        },
+        {
+            title: "Thể loại",
+            dataIndex: "TheLoai",
+            key: "TheLoai",
+            editable: true,
+        },
+        {
+            title: "CCCode",
+            dataIndex: "MaCC",
+            key: "MaCC",
+            align: "center",
+            editable: true,
+            filters: CCCodeFilters,
+            filterSearch: true,
+            onFilter: (value, record) => record.MaCC.includes(value),
+        },
+        {
+            title: "ModelCode",
+            dataIndex: "MaModel",
+            key: "MaModel",
+            align: "center",
+            editable: true,
+        },
+        {
+            title: "ItemCode",
+            dataIndex: "MaSanPham",
+            key: "MaSanPham",
+            align: "center",
+            editable: true,
+        },
+        {
+            title: "Tên sản phẩm",
+            dataIndex: "TenSanPham",
+            key: "TenSanPham",
+            editable: true,
+            // width: "20%",
+            filters: LPTFilters_TenSanPham,
             filterSearch: true,
             render: (text) =>
-                text && text.length > 100 ? (
+                text && text.length > 5 ? (
                     <Tooltip title={text}>
-                        <span>{text.slice(0, 100)}...</span>
+                        <span>{text.slice(0, 50)}...</span>
                     </Tooltip>
                 ) : (
                     text
                 ),
         },
         {
-            title: 'Bộ phận ban hành',
-            dataIndex: 'BoPhanBanHanh',
-            key: 'BoPhanBanHanh',
-            width: '15%',
+            title: "Bộ phận nhận",
+            dataIndex: "BoPhanGui",
+            key: "BoPhanGui",
             align: "center",
-            editable: true,
-            filters: LPTFilters,
-            filterSearch: true,
-            onFilter: (value, record) => record.BoPhanBanHanh.includes(value),
-        },
-        {
-            title: 'Phiên bản',
-            dataIndex: 'FilePDF',
-            key: 'FilePDF',
-            align: "center",
-            render: (text, record) => {
-                if (record.PhienBan === null) {
-                    return <span>Chưa có phiên bản</span>;
-                }
-                const downloadUrl = `${apiConfig.API_BASE_URL}/B8/downloadPDF?QuyTrinhVersionId=${record.QuyTrinhVersionId}`;
-                return <a href={downloadUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{record.PhienBan}</a>;
-            },
-        },
-        {
-            title: 'Ngày Hiệu Lực',
-            dataIndex: 'NgayHieuLuc',
-            key: 'NgayHieuLuc',
-            align: "center",
-            render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
-        },
-        {
-            title: 'Ngày Tạo',
-            dataIndex: 'NgayTao',
-            key: 'NgayTao',
-            render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
+            render: (text) =>
+                text && text.length > 40 ? (
+                    <Tooltip title={text}>
+                        <span>{text.slice(0, 40)}...</span>
+                    </Tooltip>
+                ) : (
+                    text
+                ),
         },
         {
             title: 'Chi Tiết',
-            key: 'action',
+            key: 'insert',
             align: "center",
             render: (text, record) => (
                 <Button
                     type="primary"
-                    onClick={(e) => { e.stopPropagation(); handleViewDetails(record.QuyTrinhId, record.TenQuyTrinh); }}
+                    onClick={(e) => { e.stopPropagation(); setBPN(record.BoPhanGui); setModalTitleId(record.SanPhamId); setAddVersionModalVisible(true) }}
                 >
-                    Xem tất cả
+                    Thêm tài liệu
                 </Button>
             ),
         },
@@ -507,8 +539,8 @@ const Admin = () => {
             align: "center",
             render: (text, record) => (
                 <Popconfirm
-                    title="Bạn có chắc chắn muốn xóa quy trình này?"
-                    onConfirm={(e) => { e.stopPropagation(); handleDeleteQuyTrinh(record.QuyTrinhId) }}
+                    title="Bạn có chắc chắn muốn xóa sản phẩm này?"
+                    onConfirm={(e) => { e.stopPropagation(); handleDeleteQuyTrinh(record.SanPhamId) }}
                     onCancel={(e) => e.stopPropagation()}
                     okText="Xóa"
                     cancelText="Hủy"
@@ -529,21 +561,100 @@ const Admin = () => {
                     <span>
                         <Button
                             type="link"
-                            onClick={(e) => { e.stopPropagation(); save(record.QuyTrinhId) }}
+                            onClick={() => save(record.SanPhamId)}
                             style={{ marginRight: 8 }}
                         >
                             Lưu
                         </Button>
-                        <Popconfirm title="Hủy chỉnh sửa?" onConfirm={(e) => { e.stopPropagation(); cancel() }} onCancel={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation() }}>
+                        <Popconfirm title="Hủy chỉnh sửa?" onConfirm={cancel}>
                             <Button type="link">Hủy</Button>
                         </Popconfirm>
                     </span>
                 ) : (
-                    <Button type="link" disabled={editingKey !== ""} onClick={(e) => { e.stopPropagation(); edit(record) }}>
+                    <Button type="link" disabled={editingKey !== ""} onClick={() => edit(record)}>
                         Chỉnh sửa
                     </Button>
                 );
             },
+        },
+    ];
+
+    const expandColumns = [
+        {
+            title: "Tên tài liệu",
+            dataIndex: "TenTaiLieu",
+            key: "TenTaiLieu",
+            render: (text) =>
+                text && text.length > 50 ? (
+                    <Tooltip title={text}>
+                        <span>{text.slice(0, 50)}...</span>
+                    </Tooltip>
+                ) : (
+                    text
+                ),
+        },
+        {
+            title: "Bộ phận ban hành",
+            dataIndex: "BoPhanBanHanh",
+            key: "BoPhanBanHanh",
+            align: "center",
+        },
+        {
+            title: 'Mùa sản phẩm',
+            dataIndex: 'MuaSanPham',
+            key: 'MuaSanPham',
+            align: "center",
+        },
+        {
+            title: 'Phiên bản',
+            dataIndex: 'FilePDF',
+            key: 'FilePDF',
+            align: "center",
+            render: (text, record) => {
+                if (record.PhienBan === null) {
+                    return <span>Chưa có phiên bản</span>;
+                }
+                const downloadUrl = `${apiConfig.API_BASE_URL}/B8/downloadTLPDF?TaiLieuId=${record.TaiLieuId}`;
+                return <a href={downloadUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{record.PhienBan}</a>;
+            },
+        },
+        {
+            title: 'Ngày Hiệu Lực',
+            dataIndex: 'NgayHieuLuc',
+            key: 'NgayHieuLuc',
+            align: "center",
+            render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
+        },
+        {
+            title: 'Chi Tiết',
+            key: 'action',
+            align: "center",
+            render: (text, record) => (
+                <Button
+                    type="primary"
+                    onClick={(e) => { e.stopPropagation(); handleViewDetails(record.TenTaiLieu, record.TenSanPham) }}
+                >
+                    Xem tất cả
+                </Button>
+            ),
+        },
+        {
+            title: '',
+            key: 'delete',
+            align: "center",
+            render: (text, record) => (
+                <Popconfirm
+                    title="Bạn có chắc chắn muốn xóa tài liệu này?"
+                    onConfirm={(e) => { e.stopPropagation(); handleDeleteVersion(record.TaiLieuId) }}
+                    onCancel={(e) => e.stopPropagation()}
+                    okText="Xóa"
+                    cancelText="Hủy"
+                >
+                    <Button type="primary" danger onClick={(e) => e.stopPropagation()}>
+                        Xóa
+                    </Button>
+                </Popconfirm>
+            ),
         },
     ];
     const mergedColumns = columns.map((col) => {
@@ -566,11 +677,11 @@ const Admin = () => {
         fetchData();
     }, []);
 
-    // Hàm lọc để lấy phiên bản mới nhất cho mỗi QuyTrinh (theo QuyTrinhId)
+    // Hàm lọc để lấy phiên bản mới nhất cho mỗi QuyTrinh (theo SanPhamId)
     const getLatestVersions = (list) => {
         const grouped = {};
         list.forEach(item => {
-            const key = item.QuyTrinhId;
+            const key = `${item.MaSanPham}-${item.TenTaiLieu}`;
             const version = parseFloat(item.PhienBan); // Chuyển đổi thành số
 
             if (!grouped[key] || version > parseFloat(grouped[key].PhienBan)) {
@@ -581,34 +692,39 @@ const Admin = () => {
         return Object.values(grouped).sort((a, b) => b.NgayTao - a.NgayTao);
     };
 
-    // Hàm tìm kiếm theo tên quy trình (lọc trên dữ liệu phiên bản mới nhất)
+    // Hàm tìm kiếm theo tên sản phẩm (lọc trên dữ liệu phiên bản mới nhất)
     const onSearch = (value) => {
         const filtered = getLatestVersions(allData).filter(item =>
-            item.TenQuyTrinh && item.TenQuyTrinh.toLowerCase().includes(value.toLowerCase())
+            item.TenSanPham && item.TenSanPham.toLowerCase().includes(value.toLowerCase())
         );
         setData(filtered);
     };
-    const handleViewDetails = (QuyTrinhId, TenQuyTrinh) => {
-        // Lấy tất cả các dòng có cùng QuyTrinhId được chọn
-        const details = allData.filter(item => item.QuyTrinhId === QuyTrinhId);
+    const handleViewDetails = (TenTaiLieu, TenSanPham) => {
+        // Lọc ra các dòng có cùng TenTaiLieu và TenSanPham
+        const details = allData.filter(item =>
+            item.TenTaiLieu === TenTaiLieu && item.TenSanPham === TenSanPham
+        );
 
-        // Nhóm dữ liệu theo QuyTrinhVersionId: mỗi QuyTrinhVersionId chỉ lấy dòng đầu tiên gặp được
+        // Nhóm dữ liệu theo TaiLieuId, mỗi TaiLieuId chỉ lấy dòng có phiên bản cao nhất
         const uniqueVersionsMap = new Map();
         details.forEach(item => {
-            if (!uniqueVersionsMap.has(item.QuyTrinhVersionId)) {
-                uniqueVersionsMap.set(item.QuyTrinhVersionId, item);
+            const existingItem = uniqueVersionsMap.get(item.TaiLieuId);
+            if (!existingItem || parseFloat(item.PhienBan) > parseFloat(existingItem.PhienBan)) {
+                uniqueVersionsMap.set(item.TaiLieuId, item);
             }
         });
 
-        const uniqueVersions = Array.from(uniqueVersionsMap.values());
-        // Sắp xếp theo phiên bản giảm dần (giả sử trường PhienBan là số)
-        uniqueVersions.sort((a, b) => b.PhienBan - a.PhienBan);
+        // Chuyển Map thành Array và sắp xếp theo PhienBan giảm dần
+        const uniqueVersions = Array.from(uniqueVersionsMap.values())
+            .sort((a, b) => parseFloat(b.PhienBan) - parseFloat(a.PhienBan));
 
+        // Cập nhật modal
         setModalData(uniqueVersions);
-        setModalTitle(TenQuyTrinh);
-        setModalTitleId(QuyTrinhId);
+        setModalTitle(TenTaiLieu);
+        // setModalTitleId(TenTaiLieu);
         setModalVisible(true);
     };
+
 
     const handleSelectProcess = (value) => {
         setSelectedProcess(value);
@@ -620,11 +736,10 @@ const Admin = () => {
                 new Set(
                     allData
                         .filter(item => value.includes(item.BoPhanBanHanh)) // Chỉ lấy những item có BoPhanBanHanh thuộc names
-                        .map(item => item.TenQuyTrinh) // Lấy TenQuyTrinh
+                        .map(item => item.TenSanPham) // Lấy TenSanPham
                         .filter(Boolean) // Loại bỏ giá trị null hoặc undefined
                 )
             );
-            console.log(names_);
             setAllProcessNames_(names_);
             setData(filteredData);
         }
@@ -637,7 +752,7 @@ const Admin = () => {
         setSelectedProcess_(value);
         if (value) {
             const filteredData = getLatestVersions(
-                allData.filter((item) => item.TenQuyTrinh === value)
+                allData.filter((item) => item.TenSanPham === value)
             );
             setData(filteredData);
         } else {
@@ -681,6 +796,12 @@ const Admin = () => {
     // ----- Các cột cho Modal "Xem chi tiết" chỉ hiển thị thông tin Version -----
     const modalVersionColumns = [
         {
+            title: 'Mùa sản phẩm',
+            dataIndex: 'MuaSanPham',
+            key: 'MuaSanPham',
+            align: "center",
+        },
+        {
             title: 'Phiên bản',
             dataIndex: 'FilePDF',
             key: 'FilePDF',
@@ -689,7 +810,7 @@ const Admin = () => {
                 if (record.PhienBan === null) {
                     return <span>Chưa có phiên bản</span>;
                 }
-                const downloadUrl = `${apiConfig.API_BASE_URL}/B8/downloadPDF?QuyTrinhVersionId=${record.QuyTrinhVersionId}`;
+                const downloadUrl = `${apiConfig.API_BASE_URL}/B8/downloadTLPDF?TaiLieuId=${record.TaiLieuId}`;
                 return <a href={downloadUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{record.PhienBan}</a>;
             },
         },
@@ -726,8 +847,8 @@ const Admin = () => {
             align: "center",
             render: (text, record) => (
                 <Popconfirm
-                    title="Bạn có chắc chắn muốn xóa phiên bản này?"
-                    onConfirm={(e) => { e.stopPropagation(); handleDeleteVersion(record.QuyTrinhVersionId) }}
+                    title="Bạn có chắc chắn muốn xóa tài liệu này?"
+                    onConfirm={(e) => { e.stopPropagation(); handleDeleteVersion(record.TaiLieuId) }}
                     onCancel={(e) => e.stopPropagation()}
                     okText="Xóa"
                     cancelText="Hủy"
@@ -747,7 +868,7 @@ const Admin = () => {
 
         // Lọc dữ liệu dựa trên VersionId và BoPhan có trong BoPhanGui
         const usersData = allData.filter(item =>
-            item.QuyTrinhVersionId === record.QuyTrinhVersionId &&
+            item.TaiLieuId === record.TaiLieuId &&
             // (boPhanGuiArray.length === 0 || boPhanGuiArray.includes(item.BoPhan)) && 
             item.ChucVu !== "admin" // Loại bỏ admin
         );
@@ -763,7 +884,7 @@ const Admin = () => {
         const ngayTao = dayjs(record.NgayTao);
         return homNay.diff(ngayTao, "day") < 30;
     });
-    const uniqueQuyTrinh = new Set(taiLieuMoi.map(record => `${record.TenQuyTrinh}_${record.QuyTrinhVersionId}`));
+    const uniqueQuyTrinh = new Set(taiLieuMoi.map(record => `${record.TenSanPham}_${record.TaiLieuId}`));
     const soQuyTrinhKhacNhau = uniqueQuyTrinh.size;
 
     return (
@@ -802,7 +923,7 @@ const Admin = () => {
                     <Col xs={24} sm={4}>
                         <Card style={{ backgroundColor: '#001529', border: 'none' }}>
                             <div style={{ display: 'flex', justifyContent: 'center' }}>
-                                <Button type="primary" onClick={() => setAddProcessModalVisible(true)}>Thêm quy trình mới</Button>
+                                <Button type="primary" onClick={() => setAddProcessModalVisible(true)}>Thêm sản phẩm mới</Button>
                             </div>
                         </Card>
                     </Col>
@@ -811,32 +932,32 @@ const Admin = () => {
 
                         <Card style={{ backgroundColor: '#001529', border: 'none' }}>
                             {loading ? <Spin /> : (
-                                <Form form={formEdit} component={false}>
-                                    <Table
-                                        dataSource={data}
-                                        columns={mergedColumns}
-                                        rowKey="VersionId"
-                                        scroll={{ y: 55 * 9 }}
-                                        components={{
-                                            body: {
-                                                // row: EditableRow,
-                                                cell: EditableCell,
-                                            },
-                                        }}
-                                        onRow={(record) => ({
-                                            onClick: (event) => {
-                                                if (editingKey === record.QuyTrinhId) {
-                                                    // Nếu đang edit thì không làm gì cả
-                                                    event.stopPropagation();
-                                                    return;
-                                                }
-                                                handleViewPdf(record);
-                                            },
-                                        })}
-                                    />
-                                </Form>
+                                <Spin spinning={false}>
+                                    <Form form={formEdit} component={false}>
+                                        <Table
+                                            columns={mergedColumns}
+                                            dataSource={groupedData}
+                                            components={{
+                                                body: {
+                                                    // row: EditableRow,
+                                                    cell: EditableCell,
+                                                },
+                                            }}
+                                            expandable={{
+                                                expandedRowRender: (record) => (
+                                                    <Table columns={expandColumns} dataSource={record.subItems} pagination={false}
+                                                        onRow={(record) => ({
+                                                            onClick: () => { setModalVisible(false); handleViewPdf(record) }
+                                                        })}
+                                                    />
+                                                ),
+                                            }}
+                                        />
+                                    </Form>
+                                </Spin>
                             )}
                         </Card>
+
 
                     </Col>
                 </Row>
@@ -846,9 +967,6 @@ const Admin = () => {
                     visible={modalVisible}
                     onCancel={() => setModalVisible(false)}
                     footer={[
-                        <Button key="add" type="primary" onClick={() => setAddVersionModalVisible(true)}>
-                            Thêm phiên bản
-                        </Button>,
                         <Button key="close" onClick={() => setModalVisible(false)}>
                             Đóng
                         </Button>
@@ -868,68 +986,75 @@ const Admin = () => {
                             onClick: () => { setModalVisible(false); handleViewPdf(record) }
                         })}
                     />
-                    {/* --- Modal Thêm Version --- */}
-                    <Modal
-                        title="Thêm Version Mới"
-                        visible={addVersionModalVisible}
-                        onCancel={() => setAddVersionModalVisible(false)}
-                        className={style.modalVersions}
-                        footer={[
-                            <Button key="cancel" onClick={() => setAddVersionModalVisible(false)}>
-                                Hủy
-                            </Button>,
-                            <Button key="submit" type="primary" onClick={handleAddVersion} loading={loading}>
-                                Lưu
-                            </Button>
-                        ]}
-                    >
-                        <Form form={form} layout="vertical" className={style.formAddVersion}>
-                            <Form.Item
-                                label="Phiên Bản"
-                                name="PhienBan"
-                                rules={[{ required: true, message: 'Vui lòng nhập phiên bản!' }]}
+                    {/* --- Modal Thêm tài liệu --- */}
+                </Modal>
+                <Modal
+                    title="Thêm tài liệu Mới"
+                    visible={addVersionModalVisible}
+                    onCancel={() => setAddVersionModalVisible(false)}
+                    className={style.modalVersions}
+                    footer={[
+                        <Button key="cancel" onClick={() => setAddVersionModalVisible(false)}>
+                            Hủy
+                        </Button>,
+                        <Button key="submit" type="primary" onClick={handleAddVersion} loading={loading}>
+                            Lưu
+                        </Button>
+                    ]}
+                >
+                    <Form form={form} layout="vertical" className={style.formAddVersion}>
+                        <Form.Item
+                            label="Tên tài liệu"
+                            name="TenTaiLieu"
+                            rules={[{ required: true, message: 'Vui lòng nhập tên tài liệu!' }]}
+                        >
+                            <Input placeholder="Nhập tên tài liệu" />
+                        </Form.Item>
+                        <Form.Item
+                            label="Mùa sản phẩm"
+                            name="MuaSanPham"
+                        // rules={[{ required: fas, message: 'Vui lòng nhập mùa sản phẩm!' }]}
+                        >
+                            <Input placeholder="Nhập mùa sản phẩm" />
+                        </Form.Item>
+                        <Form.Item
+                            label="Phiên Bản"
+                            name="PhienBan"
+                        // rules={[{ required: true, message: 'Vui lòng nhập phiên bản!' }]}
+                        >
+                            <Input placeholder="Nhập số phiên bản" />
+                        </Form.Item>
+                        <Form.Item
+                            label="Ngày Hiệu Lực"
+                            name="NgayHieuLuc"
+                            rules={[{ required: true, message: 'Vui lòng chọn ngày hiệu lực!' }]}
+                        >
+                            <DatePicker format="YYYY-MM-DD" />
+                        </Form.Item>
+                        <Form.Item
+                            label="Bộ phận ban hành"
+                            name="BoPhanBanHanh"
+                            rules={[{ required: true, message: 'Vui lòng chọn Bộ phận ban hành!' }]}
+                        >
+                            <Select
+                                placeholder="Chọn bộ phận ban hành"
+                                options={boPhanOptions} // Danh sách bộ phận lấy từ API
+                            />
+                        </Form.Item>
+                        <Form.Item
+                            label="Tải lên file PDF"
+                            name="File"
+                            rules={[{ required: true, message: 'Vui lòng tải lên file PDF!' }]}
+                        >
+                            <Upload
+                                beforeUpload={() => false}
+                                onChange={handleFileChange}
+                                accept=".pdf"
                             >
-                                <Input placeholder="Nhập số phiên bản" />
-                            </Form.Item>
-                            <Form.Item
-                                label="Ngày Hiệu Lực"
-                                name="NgayHieuLuc"
-                                rules={[{ required: true, message: 'Vui lòng chọn ngày hiệu lực!' }]}
-                            >
-                                <DatePicker format="YYYY-MM-DD" />
-                            </Form.Item>
-                            <Form.Item
-                                label="Bộ phận được phân phối"
-                                name="BoPhanIds"
-                                // getValueFromEvent={getValueFromEvent}
-                                // name="selectWithAllOption"
-                                rules={[{ required: true, message: 'Vui lòng chọn bộ phận!' }]}
-                            >
-                                <Select
-                                    mode="multiple"
-                                    placeholder="Bộ phận được phân phối"
-                                    options={boPhanOptions}
-                                    // value={selectedBoPhan}
-                                    allowClear
-                                // virtual={true}
-                                />
-                            </Form.Item>
-
-                            <Form.Item
-                                label="Tải lên file PDF"
-                                name="File"
-                                rules={[{ required: true, message: 'Vui lòng tải lên file PDF!' }]}
-                            >
-                                <Upload
-                                    beforeUpload={() => false}
-                                    onChange={handleFileChange}
-                                    accept=".pdf"
-                                >
-                                    <Button icon={<UploadOutlined />}>Chọn File</Button>
-                                </Upload>
-                            </Form.Item>
-                        </Form>
-                    </Modal>
+                                <Button icon={<UploadOutlined />}>Chọn File</Button>
+                            </Upload>
+                        </Form.Item>
+                    </Form>
                 </Modal>
                 {/* --- Modal Nhập nhận xét --- */}
                 <Modal
@@ -1020,7 +1145,7 @@ const Admin = () => {
                     />
                 </Modal>
                 <Modal
-                    title="Thêm Quy Trình Mới"
+                    title="Thêm sản phẩm Mới"
                     visible={addProcessModalVisible}
                     onCancel={() => setAddProcessModalVisible(false)}
                     className={style.modalVersions}
@@ -1034,31 +1159,93 @@ const Admin = () => {
                     ]}
                 >
                     <Form form={processForm} className={style.formAddVersion} layout="vertical">
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item
+                                    label="Khách hàng"
+                                    name="KhachHang"
+                                    rules={[{ required: true, message: 'Vui lòng chọn khách hàng!' }]}
+                                >
+                                    <Select
+                                        placeholder="Khách hàng"
+                                        options={khachHangOptions}
+                                    />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item
+                                    label="Dòng hàng"
+                                    name="DongHang"
+                                    rules={[{ required: true, message: 'Vui lòng chọn dòng hàng!' }]}
+                                >
+                                    <Select
+                                        placeholder="Dòng hàng"
+                                        options={dongHangOptions}
+                                    />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item
+                                    label="CC Code"
+                                    name="MaCC"
+                                    rules={[{ required: true, message: 'Vui lòng nhập CC Code!' }]}
+                                >
+                                    <Input placeholder="Nhập CC Code" />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item
+                                    label="Model Code"
+                                    name="MaModel"
+                                    rules={[{ required: true, message: 'Vui lòng nhập Model Code!' }]}
+                                >
+                                    <Input placeholder="Nhập Model Code" />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item
+                                    label="Item Code"
+                                    name="MaSanPham"
+                                    rules={[{ required: true, message: 'Vui lòng nhập Item Code!' }]}
+                                >
+                                    <Input placeholder="Nhập Item Code" />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item
+                                    label="Thể Loại"
+                                    name="TheLoai"
+                                    rules={[{ required: true, message: 'Vui lòng nhập Thể Loại!' }]}
+                                >
+                                    <Input placeholder="Nhập thể loại" />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+
                         <Form.Item
-                            label="Mã Quy Trình"
-                            name="MaSo"
-                            rules={[{ required: true, message: 'Vui lòng nhập Mã Số!' }]}
+                            label="Tên Sản Phẩm"
+                            name="TenSanPham"
+                            rules={[{ required: true, message: 'Vui lòng nhập Tên Sản Phẩm!' }]}
                         >
-                            <Input placeholder="Nhập mã quy trình" />
+                            <Input placeholder="Nhập tên sản phẩm" />
                         </Form.Item>
                         <Form.Item
-                            label="Tên Quy Trình"
-                            name="TenQuyTrinh"
-                            rules={[{ required: true, message: 'Vui lòng nhập Tên Quy Trình!' }]}
-                        >
-                            <Input placeholder="Nhập tên quy trình" />
-                        </Form.Item>
-                        <Form.Item
-                            label="Bộ phận ban hành"
-                            name="BoPhanBanHanh"
-                            rules={[{ required: true, message: 'Vui lòng nhập Bộ phận ban hành!' }]}
+                            label="Bộ phận được phân phối"
+                            name="BoPhanIds"
+                            rules={[{ required: true, message: 'Vui lòng chọn bộ phận!' }]}
                         >
                             <Select
-                                placeholder="Chọn bộ phận ban hành"
+                                mode="multiple"
+                                placeholder="Bộ phận được phân phối"
                                 options={boPhanOptions} // Danh sách bộ phận lấy từ API
                             />
                         </Form.Item>
                     </Form>
+
                 </Modal>
                 {pdfVisible && (
                     <ViewerPDF
@@ -1072,4 +1259,4 @@ const Admin = () => {
     );
 };
 
-export default Admin;
+export default Admin_SP;
