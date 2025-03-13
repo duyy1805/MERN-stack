@@ -3,7 +3,7 @@ import { Route, Redirect } from "react-router-dom";
 import axios from 'axios';
 import apiConfig from '../apiConfig.json'
 // Tạo PrivateRoute bảo vệ route dựa trên quyền
-const PrivateRoute = ({ component: Component, rolesAllowed, ...rest }) => {
+const PrivateRoute_B3 = ({ component: Component, rolesAllowed, ...rest }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const role = localStorage.getItem("role"); // Lấy role người dùng từ localStorage
@@ -48,17 +48,21 @@ const PrivateRoute = ({ component: Component, rolesAllowed, ...rest }) => {
                         // Nếu không đúng role, chuyển hướng
                         <Redirect
                             to={
-                                "/B2"
+                                role === "admin"
+                                    ? "/B3/pxvt"
+                                    : role === "user"
+                                        ? "/B3"
+                                        : "/B3"
                             }
                         />
                     )
                 ) : (
                     // Nếu chưa đăng nhập hoặc token không hợp lệ, chuyển hướng đến trang đăng nhập
-                    <Redirect to="/B2" />
+                    <Redirect to="/B3" />
                 )
             }
         />
     );
 };
 
-export default PrivateRoute;
+export default PrivateRoute_B3;

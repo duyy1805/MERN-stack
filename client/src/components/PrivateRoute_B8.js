@@ -49,16 +49,16 @@ const PrivateRoute_B8 = ({ component: Component, rolesAllowed, ...rest }) => {
                         <Redirect
                             to={
                                 role === "admin"
-                                    ? "/AdminDashboard"
+                                    ? "B8/AdminDashboard"
                                     : role === "user"
-                                        ? "/QLQT"
-                                        : "/"
+                                        ? "B8/QLQT"
+                                        : "/B8"
                             }
                         />
                     )
                 ) : (
                     // Nếu chưa đăng nhập hoặc token không hợp lệ, chuyển hướng đến trang đăng nhập
-                    <Redirect to="/" />
+                    <Redirect to="/B8" />
                 )
             }
         />

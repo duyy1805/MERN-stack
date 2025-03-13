@@ -21,7 +21,7 @@ const User = () => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('role');
         localStorage.removeItem('HoTen');
-        history.push('/login'); // chuyển hướng về trang login
+        history.push('/B8'); // chuyển hướng về trang login
     };
     const menu = (
         <Menu>

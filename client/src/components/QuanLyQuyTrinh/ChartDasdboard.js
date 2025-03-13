@@ -26,7 +26,7 @@ const AppHeader = () => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('role');
         localStorage.removeItem('HoTen');
-        history.push('/login'); // chuyển hướng về trang login
+        history.push('/B8'); // chuyển hướng về trang login
     };
     const menu = (
         <Menu>
@@ -63,12 +63,12 @@ const AppHeader = () => {
 };
 const COLORS = [
     '#0088FE', '#00C49F', '#FFBB28', '#FF8042', // Màu cũ
-    '#1E1E1E', // Xám đậm
+    '#D3D3D3', // Xám đậm
     '#2E8B57', // Xanh lá đậm
     '#9932CC', // Tím sẫm
     '#8B0000', // Đỏ đậm
     '#FF4500', // Cam lửa
-    '#191970', // Xanh navy
+    '#FFD700', // Xanh navy
     '#006400', // Xanh lá rừng
     '#B8860B', // Vàng nâu
     '#4682B4', // Xanh thép
@@ -287,14 +287,14 @@ const ChartDasdboard = () => {
             <Content style={{ padding: 10, backgroundColor: '#162f48' }}>
                 {contextHolder}
                 <Row gutter={[16, 16]}>
-                    <Col xs={24} sm={10}>
+                    <Col xs={24} sm={12}>
                         <Card title="Thống kê quy trình" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
-                            <ResponsiveContainer width="100%" height={200}>
+                            <ResponsiveContainer width="100%" height={250}>
                                 <PieChart>
                                     <Pie
                                         data={chartData}
                                         cx={140}
-                                        cy={100}
+                                        cy={120}
                                         innerRadius={60}
                                         outerRadius={80}
                                         paddingAngle={5}
@@ -316,7 +316,7 @@ const ChartDasdboard = () => {
                     </Col>
                     <Col xs={24} sm={8}>
                         <Card title={`Số lượng phiên bản mới: ${totalVersions}`} headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
-                            <ResponsiveContainer width="100%" height={200}>
+                            <ResponsiveContainer width="100%" height={250}>
                                 <LineChart data={lineChartData}>
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis
@@ -330,21 +330,21 @@ const ChartDasdboard = () => {
                             </ResponsiveContainer>
                         </Card>
                     </Col>
-                    <Col xs={24} sm={6}>
+                    <Col xs={24} sm={4}>
                         <Card title="Tổng số lượng quy trình" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
                             <Typography.Title level={2} style={{ color: "#fff", textAlign: "center" }}>
                                 {data.length}
                             </Typography.Title>
                         </Card>
                     </Col>
-                    <Col xs={24} sm={10}>
+                    <Col xs={24} sm={12}>
                         <Card title="Thống kê sản phẩm" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
-                            <ResponsiveContainer width="100%" height={200}>
+                            <ResponsiveContainer width="100%" height={250}>
                                 <PieChart>
                                     <Pie
                                         data={chartDataTL}
                                         cx={140}
-                                        cy={100}
+                                        cy={120}
                                         innerRadius={60}
                                         outerRadius={80}
                                         paddingAngle={5}
@@ -358,7 +358,8 @@ const ChartDasdboard = () => {
                                     <RechartsTooltip />
                                     <Legend layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{
                                         maxHeight: 150, overflowY: "auto", scrollbarWidth: "thin",
-                                        scrollbarColor: "#FFFFFF #001529"
+                                        scrollbarColor: "#FFFFFF #001529", width: 200, overflow: 'hidden',
+                                        textOverflow: 'ellipsis', whiteSpace: 'nowrap'
                                     }} />
                                 </PieChart>
                             </ResponsiveContainer>
@@ -366,7 +367,7 @@ const ChartDasdboard = () => {
                     </Col>
                     <Col xs={24} sm={8}>
                         <Card title={`Số lượng tài liệu mới: ${totalVersionsTL}`} headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
-                            <ResponsiveContainer width="100%" height={200}>
+                            <ResponsiveContainer width="100%" height={250}>
                                 <LineChart data={lineChartDataTL}>
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis
@@ -380,7 +381,7 @@ const ChartDasdboard = () => {
                             </ResponsiveContainer>
                         </Card>
                     </Col>
-                    <Col xs={24} sm={6}>
+                    <Col xs={24} sm={4}>
                         <Card title="Tổng số lượng tài liệu" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
                             <Typography.Title level={2} style={{ color: "#fff", textAlign: "center" }}>
                                 {dataTL.length}

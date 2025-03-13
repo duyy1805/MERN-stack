@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Form, Input, Button, Typography, Row, Col, Switch, Layout, Radio, message } from "antd";
+import { Form, Input, Button, Typography, Row, Col, Switch, Layout, Radio, message, Image } from "antd";
 import { Link, useHistory } from "react-router-dom";
 import "./Style.css";
 import axios from "axios";
@@ -38,7 +38,7 @@ const SignIn = () => {
                 const { accessToken, role } = response.data;
                 localStorage.setItem("accessToken", accessToken);
                 localStorage.setItem("role", role);
-                history.push("B3/pxvt");
+                history.push("B2/qr");
                 messageApi.open({
                     type: 'success',
                     content: 'Login successful!',
@@ -71,8 +71,16 @@ const SignIn = () => {
                     <Col xs={24} sm={20} md={12} lg={8} className="signin-form-col">
                         <Title className="mb-15">Log In</Title>
                         <Title className="font-regular text-muted" level={5}>
-                            Phiếu xuất
+                            Thiết bị phòng cháy
                         </Title>
+                        <div>
+                            <Image
+                                height={50}
+                                preview={false} // Tắt chức năng phóng to
+                                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQlE5WqC5kYtMhSvd07l4G6ClN9VlypQnrzzg&s"
+                                style={{ cursor: "pointer" }} // Hiển thị con trỏ khi hover
+                            />
+                        </div>
                         {/* Thêm lựa chọn loại đăng nhập */}
                         <Form
                             onFinish={onFinish}

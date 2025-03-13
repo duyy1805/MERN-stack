@@ -72,7 +72,7 @@ const AppHeader = () => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('role');
         localStorage.removeItem('HoTen');
-        history.push('/login'); // chuyển hướng về trang login
+        history.push('/B8'); // chuyển hướng về trang login
     };
     const menu = (
         <Menu>
@@ -211,7 +211,7 @@ const Admin_SP = () => {
             const list = res.data;
             setAllData(list);
             setData(getLatestVersions(list));
-
+            console.log(getLatestVersions(list))
             const names = Array.from(
                 new Set(list.map((item) => item.BoPhanBanHanh).filter(Boolean))
             );
@@ -506,20 +506,20 @@ const Admin_SP = () => {
                     text
                 ),
         },
-        {
-            title: "Bộ phận nhận",
-            dataIndex: "BoPhanGui",
-            key: "BoPhanGui",
-            align: "center",
-            render: (text) =>
-                text && text.length > 40 ? (
-                    <Tooltip title={text}>
-                        <span>{text.slice(0, 40)}...</span>
-                    </Tooltip>
-                ) : (
-                    text
-                ),
-        },
+        // {
+        //     title: "Bộ phận nhận",
+        //     dataIndex: "BoPhanGui",
+        //     key: "BoPhanGui",
+        //     align: "center",
+        //     render: (text) =>
+        //         text && text.length > 40 ? (
+        //             <Tooltip title={text}>
+        //                 <span>{text.slice(0, 40)}...</span>
+        //             </Tooltip>
+        //         ) : (
+        //             text
+        //         ),
+        // },
         {
             title: 'Chi Tiết',
             key: 'insert',
@@ -1190,7 +1190,7 @@ const Admin_SP = () => {
                                 <Form.Item
                                     label="CC Code"
                                     name="MaCC"
-                                    rules={[{ required: true, message: 'Vui lòng nhập CC Code!' }]}
+                                // rules={[{ required: true, message: 'Vui lòng nhập CC Code!' }]}
                                 >
                                     <Input placeholder="Nhập CC Code" />
                                 </Form.Item>
@@ -1199,7 +1199,7 @@ const Admin_SP = () => {
                                 <Form.Item
                                     label="Model Code"
                                     name="MaModel"
-                                    rules={[{ required: true, message: 'Vui lòng nhập Model Code!' }]}
+                                // rules={[{ required: true, message: 'Vui lòng nhập Model Code!' }]}
                                 >
                                     <Input placeholder="Nhập Model Code" />
                                 </Form.Item>
@@ -1210,7 +1210,7 @@ const Admin_SP = () => {
                                 <Form.Item
                                     label="Item Code"
                                     name="MaSanPham"
-                                    rules={[{ required: true, message: 'Vui lòng nhập Item Code!' }]}
+                                // rules={[{ required: true, message: 'Vui lòng nhập Item Code!' }]}
                                 >
                                     <Input placeholder="Nhập Item Code" />
                                 </Form.Item>

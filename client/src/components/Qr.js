@@ -68,7 +68,7 @@ function Qr() {
     const handleLogout = () => {
         localStorage.removeItem('role');
         localStorage.removeItem('accessToken');
-        history.push('/');
+        history.push('/B2');
     };
 
     // Hàm lấy danh sách thiết bị từ API

@@ -72,7 +72,7 @@ const AppHeader = () => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('role');
         localStorage.removeItem('HoTen');
-        history.push('/login'); // chuyển hướng về trang login
+        history.push('/B8'); // chuyển hướng về trang login
     };
     const menu = (
         <Menu>
@@ -685,6 +685,7 @@ const Admin = () => {
             dataIndex: 'FilePDF',
             key: 'FilePDF',
             align: "center",
+            editable: true,
             render: (text, record) => {
                 if (record.PhienBan === null) {
                     return <span>Chưa có phiên bản</span>;
@@ -698,6 +699,7 @@ const Admin = () => {
             dataIndex: 'NgayHieuLuc',
             key: 'NgayHieuLuc',
             align: "center",
+            editable: true,
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
         {
@@ -738,8 +740,48 @@ const Admin = () => {
                 </Popconfirm>
             ),
         },
+        {
+            title: "",
+            key: "edit",
+            align: "center",
+            render: (_, record) => {
+                const editable = isEditing(record);
+                return editable ? (
+                    <span>
+                        <Button
+                            type="link"
+                            onClick={(e) => { e.stopPropagation() }}
+                            style={{ marginRight: 8 }}
+                        >
+                            Lưu
+                        </Button>
+                        <Popconfirm title="Hủy chỉnh sửa?" onConfirm={(e) => { e.stopPropagation(); cancel() }} onCancel={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation() }}>
+                            <Button type="link">Hủy</Button>
+                        </Popconfirm>
+                    </span>
+                ) : (
+                    <Button type="link" disabled={editingKey !== ""} onClick={(e) => { e.stopPropagation(); edit(record) }}>
+                        Chỉnh sửa
+                    </Button>
+                );
+            },
+        },
     ];
-
+    const mergedModalVersionColumns = modalVersionColumns.map((col) => {
+        if (!col.editable) {
+            return col;
+        }
+        return {
+            ...col,
+            onCell: (record) => ({
+                record,
+                inputType: "text",
+                dataIndex: col.dataIndex,
+                title: col.title,
+                editing: isEditing(record),
+            }),
+        };
+    });
     // Hàm mở Modal trạng thái (danh sách người dùng cho version được chọn)
     const handleViewStatus = (record) => {
         // Kiểm tra nếu BoPhanGui bị null hoặc undefined thì gán mảng rỗng []
@@ -859,7 +901,7 @@ const Admin = () => {
                 >
                     <Table
                         dataSource={modalData}
-                        columns={modalVersionColumns}
+                        columns={mergedModalVersionColumns}
                         rowKey="VersionId"
                         pagination={false}
                         className={style.tableVersions}
