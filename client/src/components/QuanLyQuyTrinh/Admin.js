@@ -183,7 +183,6 @@ const Admin = () => {
         try {
             const row = await formEdit.validateFields();
             const updatedData = { ...row, Id: key };
-            console.log(updatedData)
             const response = await axios.put(`${apiConfig.API_BASE_URL}/B8/capnhatquytrinh`, updatedData);
             if (response.status === 200) {
                 setData((prevData) =>
@@ -222,7 +221,6 @@ const Admin = () => {
 
     // Xử lý khi chọn file
     const handleFileChange = (info) => {
-        console.log("Upload info:", info);
         if (info.fileList && info.fileList.length > 0) {
             setFile(info.fileList[0].originFileObj);
         }
@@ -247,8 +245,11 @@ const Admin = () => {
             });
         } finally {
             setLoading(false);
+            const allNames = Array.from(
+                new Set(allData.map(item => item.TenQuyTrinh).filter(Boolean))
+            );
 
-            // setAllProcessNames_([]);
+            setAllProcessNames_(allNames);
         }
     };
 
@@ -361,7 +362,6 @@ const Admin = () => {
 
     const handleDeleteVersion = async (QuyTrinhVersionId) => {
         try {
-            console.log(QuyTrinhVersionId)
             setLoading(true);
             await axios.post(`${apiConfig.API_BASE_URL}/B8/xoaphienban`, {
                 QuyTrinhVersionId
@@ -381,7 +381,6 @@ const Admin = () => {
 
     const handleDeleteQuyTrinh = async (QuyTrinhId) => {
         try {
-
             setLoading(true);
             await axios.post(`${apiConfig.API_BASE_URL}/B8/xoaquytrinh`, {
                 QuyTrinhId
@@ -476,14 +475,14 @@ const Admin = () => {
             },
         },
         {
-            title: 'Ngày Hiệu Lực',
+            title: 'Ngày hiệu lực',
             dataIndex: 'NgayHieuLuc',
             key: 'NgayHieuLuc',
             align: "center",
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
         {
-            title: 'Ngày Tạo',
+            title: 'Ngày cập nhật',
             dataIndex: 'NgayTao',
             key: 'NgayTao',
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
@@ -566,9 +565,9 @@ const Admin = () => {
         fetchData();
     }, []);
 
-    // Hàm lọc để lấy phiên bản mới nhất cho mỗi QuyTrinh (theo QuyTrinhId)
     const getLatestVersions = (list) => {
         const grouped = {};
+
         list.forEach(item => {
             const key = item.QuyTrinhId;
             const version = parseFloat(item.PhienBan); // Chuyển đổi thành số
@@ -577,9 +576,33 @@ const Admin = () => {
                 grouped[key] = item;
             }
         });
-        // Sắp xếp theo thứ tự giảm dần của PhienBan
-        return Object.values(grouped).sort((a, b) => b.NgayTao - a.NgayTao);
+
+        const departmentOrder = [
+            "B1 (Phòng KH-KD)", "B2 (Phòng TC-LĐ)", "B3 (Phòng Vật tư)", "B4 (Phòng TC-KT)", "B5 (Phòng Chính trị)",
+            "B6 (Phòng HC-HC)", "B7 (Phòng KT-CN)", "B8 (Phòng Kiểm nghiệm)", "B9 (Phòng Cơ điện)",
+            "Ban CNTT", "Ban QLHT", "Ban NCPT"
+        ];
+
+        return Object.values(grouped).sort((a, b) => {
+            // Sắp xếp theo BoPhanBanHanh trước
+            const deptA = departmentOrder.indexOf(a.BoPhanBanHanh);
+            const deptB = departmentOrder.indexOf(b.BoPhanBanHanh);
+            if (deptA !== deptB) return deptA - deptB; // Nếu khác nhau, sắp xếp theo thứ tự trong departmentOrder
+
+            // Sắp xếp theo loại mã (QT trước HD)
+            const regex = /^([A-Z]+)\.(\d+)-(.+)$/; // Tách mã loại, số và phần chữ
+            const [, typeA, numA, textA] = a.MaSo.match(regex);
+            const [, typeB, numB, textB] = b.MaSo.match(regex);
+
+            const typeComparison = typeB.localeCompare(typeA); // So sánh mã loại (QT, HD, ...)
+            if (typeComparison !== 0) return typeComparison;
+
+            // Sắp xếp theo số thứ tự
+            return parseInt(numA) - parseInt(numB);
+        });
     };
+
+
 
     // Hàm tìm kiếm theo tên quy trình (lọc trên dữ liệu phiên bản mới nhất)
     const onSearch = (value) => {
@@ -624,11 +647,15 @@ const Admin = () => {
                         .filter(Boolean) // Loại bỏ giá trị null hoặc undefined
                 )
             );
-            console.log(names_);
             setAllProcessNames_(names_);
             setData(filteredData);
         }
         else {
+            const allNames = Array.from(
+                new Set(allData.map(item => item.TenQuyTrinh).filter(Boolean))
+            );
+
+            setAllProcessNames_(allNames);
             setData(getLatestVersions(allData))
         }
     };
@@ -655,7 +682,6 @@ const Admin = () => {
     const confirmField = async (record, field) => {
         const HoTen = localStorage.getItem('HoTen');
         const userId = localStorage.getItem('userId');
-        console.log(`Xác nhận ${field} cho phiên bản ${record.VersionId} của ${userId}`);
         try {
             await axios.post(`${apiConfig.API_BASE_URL}/B8/confirm`, {
                 VersionId: record.VersionId,
@@ -695,7 +721,7 @@ const Admin = () => {
             },
         },
         {
-            title: 'Ngày Hiệu Lực',
+            title: 'Ngày hiệu lực',
             dataIndex: 'NgayHieuLuc',
             key: 'NgayHieuLuc',
             align: "center",
@@ -703,7 +729,7 @@ const Admin = () => {
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
         {
-            title: 'Ngày Tạo',
+            title: 'Ngày cập nhật',
             dataIndex: 'NgayTao',
             key: 'NgayTao',
             align: "center",
@@ -837,7 +863,7 @@ const Admin = () => {
                                 allowClear
                                 placeholder="Chọn tài liệu"
                                 style={{ width: '100%' }}
-                                options={allProcessNames_.map(name => ({ label: name, value: name }))}
+                                options={optionsSelect}
                             />
                         </Card>
                     </Col>
@@ -934,9 +960,9 @@ const Admin = () => {
                                 <Input placeholder="Nhập số phiên bản" />
                             </Form.Item>
                             <Form.Item
-                                label="Ngày Hiệu Lực"
+                                label="Ngày hiệu lực"
                                 name="NgayHieuLuc"
-                                rules={[{ required: true, message: 'Vui lòng chọn ngày hiệu lực!' }]}
+                                rules={[{ required: true, message: 'Vui lòng chọn Ngày hiệu lực!' }]}
                             >
                                 <DatePicker format="YYYY-MM-DD" />
                             </Form.Item>

@@ -49,9 +49,9 @@ const PrivateRoute_B8 = ({ component: Component, rolesAllowed, ...rest }) => {
                         <Redirect
                             to={
                                 role === "admin"
-                                    ? "B8/AdminDashboard"
+                                    ? "/B8/AdminDashboard"
                                     : role === "user"
-                                        ? "B8/QLQT"
+                                        ? "/B8/QLQT"
                                         : "/B8"
                             }
                         />

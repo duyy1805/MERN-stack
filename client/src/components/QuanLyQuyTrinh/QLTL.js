@@ -198,7 +198,8 @@ const QLTL = () => {
         label: bp
     }));
     const LPTFilters = createFilters('BoPhanBanHanh');
-
+    const LPTFilters_TenSanPham = createFilters('TenSanPham');
+    const CCCodeFilters = createFilters('MaCC')
     const groupedData = Object.values(
         data.reduce((acc, item) => {
             const key = `${item.MaSanPham}-${item.TenSanPham}`;
@@ -241,6 +242,9 @@ const QLTL = () => {
             dataIndex: "MaCC",
             key: "MaCC",
             align: "center",
+            filters: CCCodeFilters,
+            filterSearch: true,
+            onFilter: (value, record) => record.MaCC.includes(value),
         },
         {
             title: "ModelCode",
@@ -259,11 +263,21 @@ const QLTL = () => {
             dataIndex: "TenSanPham",
             key: "TenSanPham",
             width: "20%",
+            filters: LPTFilters_TenSanPham,
+            filterSearch: true,
+            onFilter: (value, record) => record.TenSanPham.includes(value),
         },
         {
             title: "Thể loại",
             dataIndex: "TheLoai",
             key: "TheLoai",
+        },
+        {
+            title: 'Ngày cập nhật',
+            dataIndex: 'NgayTao',
+            key: 'NgayTao',
+            align: "center",
+            render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
     ];
 
@@ -337,7 +351,7 @@ const QLTL = () => {
             }
         });
         // Sắp xếp theo thứ tự giảm dần của PhienBan
-        return Object.values(grouped).sort((a, b) => b.NgayTao - a.NgayTao);
+        return Object.values(grouped).sort((a, b) => new Date(b.NgayTao) - new Date(a.NgayTao))
     };
 
     // Hàm tìm kiếm theo tên sản phẩm (lọc trên dữ liệu phiên bản mới nhất)
@@ -406,14 +420,14 @@ const QLTL = () => {
             },
         },
         {
-            title: 'Ngày Hiệu Lực',
+            title: 'Ngày hiệu lực',
             dataIndex: 'NgayHieuLuc',
             key: 'NgayHieuLuc',
             align: "center",
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
         {
-            title: 'Ngày Tạo',
+            title: 'Ngày cập nhật',
             dataIndex: 'NgayTao',
             key: 'NgayTao',
             align: "center",
@@ -467,14 +481,14 @@ const QLTL = () => {
                 {contextHolder}
                 <Row gutter={[16, 16]}>
                     <Col xs={24} sm={8}>
-                        <Card title="Tài liệu được nhận">
-                            <ResponsiveContainer width="100%" height={100}>
+                        <Card title="Tài liệu được nhận" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
+                            <ResponsiveContainer width="100%" height={160}>
                                 <PieChart >
                                     <Pie
                                         data={piedata}
                                         cx="50%"
                                         cy="50%"
-                                        outerRadius={40}
+                                        outerRadius={30}
                                         fill="#8884d8"
                                         dataKey="value"
                                         label
@@ -489,7 +503,7 @@ const QLTL = () => {
                             </ResponsiveContainer>
                         </Card>
                     </Col>
-                    <Col xs={24} sm={8}>
+                    {/* <Col xs={24} sm={8}>
                         <Card >
                             <Select
                                 showSearch
@@ -501,7 +515,7 @@ const QLTL = () => {
                                 options={allProcessNames.map(name => ({ label: name, value: name }))}
                             />
                         </Card>
-                    </Col>
+                    </Col> */}
                     <Col xs={24} sm={8}>
                         <Card title="Tài liệu mới" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
                             <Typography.Title level={2} style={{ color: "#fff", textAlign: "center" }}>

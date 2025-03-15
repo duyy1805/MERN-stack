@@ -23,7 +23,7 @@ function App() {
         <Route exact path="/" component={NotFound} />
         <PrivateRoute_B3 exact path="/B3/pxvt" component={PXVT} rolesAllowed={["admin"]} />
         <PrivateRoute path="/B2/qr" component={Qr} rolesAllowed={["user"]} />
-        <PrivateRoute_B8 exact path="B8/QLQT" component={User} rolesAllowed={["admin", "user"]} />
+        <PrivateRoute_B8 exact path="/B8/QLQT" component={User} rolesAllowed={["user"]} />
         <PrivateRoute_B8 exact path="/B8/AdminDashboard" component={AdminDashboard} rolesAllowed={["admin"]} redirectPath="B8/QLQT" />
         <Redirect to="/" />
       </Switch>

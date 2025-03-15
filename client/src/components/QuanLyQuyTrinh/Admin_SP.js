@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-    Row,
+    Row, Tabs,
     Col,
     Input,
     Table,
@@ -65,48 +65,6 @@ const EditableCell = ({
         </td>
     );
 };
-const AppHeader = () => {
-    const history = useHistory();
-    const handleLogout = () => {
-        // Xóa dữ liệu lưu trữ và chuyển hướng
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('role');
-        localStorage.removeItem('HoTen');
-        history.push('/B8'); // chuyển hướng về trang login
-    };
-    const menu = (
-        <Menu>
-            <Menu.Item key="account">
-                <a href="/account">Tài khoản</a>
-            </Menu.Item>
-            <Menu.Item key="settings">
-                <a href="/settings">Cài đặt</a>
-            </Menu.Item>
-            <Menu.Item key="logout" onClick={handleLogout}>
-                Log Out
-            </Menu.Item>
-        </Menu>
-    );
-
-    return (
-        <Header style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            background: '#fff',
-            padding: '0 20px'
-        }}>
-            <div style={{ fontSize: '20px', fontWeight: 'bold' }}>Quản lý sản phẩm</div>
-            <Dropdown overlay={menu} trigger={['click']}>
-                <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                    <Avatar icon={<UserOutlined />} />
-                    <span style={{ marginLeft: '8px' }}>{localStorage.getItem('HoTen')}</span>
-                    {/* <SettingOutlined style={{ marginLeft: '8px' }} /> */}
-                </div>
-            </Dropdown>
-        </Header>
-    );
-};
 
 const Admin_SP = () => {
     const [allData, setAllData] = useState([]); // tất cả phiên bản của các sản phẩm
@@ -117,7 +75,12 @@ const Admin_SP = () => {
 
     const [modalVisible, setModalVisible] = useState(false);
     const [modalData, setModalData] = useState([]); // dữ liệu các version của sản phẩm được chọn (mỗi phiên bản duy nhất)
+    const [modalVersionVisible, setModalVersionVisible] = useState(false);
+    const [modalVersionData, setModalVersionData] = useState([]);
+
     const [modalTitle, setModalTitle] = useState(''); // tên sản phẩm được chọn
+    const [modalTaiLieuTitle, setModalTaiLieuTitle] = useState('');
+
     const [modalTitleId, setModalTitleId] = useState(''); // id sản phẩm được chọn
     const [bPN, setBPN] = useState('');
 
@@ -145,11 +108,11 @@ const Admin_SP = () => {
 
     const [messageApi, contextHolder] = message.useMessage();
     const currentRole = localStorage.getItem('role');
-    const isEditing = (record) => record.key === editingKey;
+    const isEditing = (record) => record.SanPhamId === editingKey;
 
     const edit = (record) => {
         formEdit.setFieldsValue({ ...record });
-        setEditingKey(record.key);
+        setEditingKey(record.SanPhamId);
     };
 
     const cancel = () => {
@@ -223,12 +186,12 @@ const Admin_SP = () => {
             });
         } finally {
             setLoading(false);
-            // setAllProcessNames_([]);
         }
     };
 
     // Khi người dùng click vào 1 hàng, mở PDF ngay lập tức
     const handleViewPdf = async (record) => {
+        setModalVisible(false); setModalVersionVisible(false);
         setCurrentRecord(record);
         if (record.PhienBan === null) {
             messageApi.open({
@@ -257,8 +220,8 @@ const Admin_SP = () => {
                 KhachHang: values.KhachHang,
                 DongHang: values.DongHang,
                 MaCC: values.MaCC,
-                MaModel: values.MaModel,
-                MaSanPham: values.MaSanPham,
+                // MaModel: values.MaModel,
+                // MaSanPham: values.MaSanPham,
                 TheLoai: values.TheLoai,
                 TenSanPham: values.TenSanPham,
                 BoPhanIds: values.BoPhanIds // Dữ liệu mảng
@@ -316,6 +279,11 @@ const Admin_SP = () => {
             formData.append('SanPhamId', modalTitleId);
             formData.append('TenTaiLieu', values.TenTaiLieu);
             formData.append('BoPhanBanHanh', values.BoPhanBanHanh);
+            if (!values.MaSanPham || values.MaSanPham.trim() === "") {
+                formData.append('MaSanPham', "NULL"); // Hoặc có thể không thêm vào nếu API hỗ trợ
+            } else {
+                formData.append('MaSanPham', values.MaSanPham);
+            }
             formData.append('MuaSanPham', values.MuaSanPham);
             formData.append('PhienBan', values.PhienBan);
             formData.append('NgayHieuLuc', values.NgayHieuLuc.format('YYYY-MM-DD'));
@@ -417,34 +385,53 @@ const Admin_SP = () => {
         { value: "Ikea", label: "Ikea" }
     ];
     const dongHangOptions = [
-        { value: "Dek", label: "Dek" },
-        { value: "Ikea", label: "Ikea" }
+        { value: "DOMYOS", label: "DOMYOS" },
+        { value: "NO BRAND", label: "NO BRAND" },
+        { value: "FORCLAZ", label: "FORCLAZ" },
+        { value: "KIPSTA", label: "KIPSTA" },
+        { value: "QUECHUA", label: "QUECHUA" },
+        { value: "ARTENGO", label: "ARTENGO" },
+        { value: "ELOPS", label: "ELOPS" },
+        { value: "KALENJI", label: "KALENJI" },
+        { value: "OXELO", label: "OXELO" },
+        { value: "STAREVER", label: "STAREVER" },
+        { value: "FOUGANZA", label: "FOUGANZA" },
+        { value: "PONGORI", label: "PONGORI" },
+        { value: "BTWIN", label: "BTWIN" }
     ];
     const LPTFilters = createFilters('BoPhanBanHanh');
     const LPTFilters_TenSanPham = createFilters('TenSanPham');
     const CCCodeFilters = createFilters('MaCC')
     const groupedData = Object.values(
         data.reduce((acc, item) => {
-            const key = `${item.MaSanPham}-${item.TenSanPham}`;
+            const key = `${item.MaCC}-${item.TenSanPham}`;
 
             if (!acc[key]) {
                 acc[key] = {
                     ...item,
                     key,  // Thêm key để React không bị lỗi render
-                    subItems: []
+                    subItems: [],
+                    subItems_: [],
                 };
             }
 
-            // Thêm dữ liệu vào children (tránh trùng dòng cha)
-            acc[key].subItems.push({
-                ...item,
-                key: `${item.TaiLieuId}-${item.NguoiDungId}`
-            });
+            if (item.CCCode === null && item.ItemCode === null) {
+                acc[key].subItems.push({
+                    ...item,
+                    key: `${item.TaiLieuId}-${item.PhienBan}`
+                });
+            }
+            if (item.CCCode === null && item.ItemCode !== null) {
+                acc[key].subItems_.push({
+                    ...item,
+                    key: `${item.TaiLieuId}-${item.PhienBan}`
+                });
+            }
 
             return acc;
         }, {})
     );
-
+    console.log(groupedData)
 
     const columns = [
         {
@@ -476,20 +463,6 @@ const Admin_SP = () => {
             onFilter: (value, record) => record.MaCC.includes(value),
         },
         {
-            title: "ModelCode",
-            dataIndex: "MaModel",
-            key: "MaModel",
-            align: "center",
-            editable: true,
-        },
-        {
-            title: "ItemCode",
-            dataIndex: "MaSanPham",
-            key: "MaSanPham",
-            align: "center",
-            editable: true,
-        },
-        {
             title: "Tên sản phẩm",
             dataIndex: "TenSanPham",
             key: "TenSanPham",
@@ -497,6 +470,7 @@ const Admin_SP = () => {
             // width: "20%",
             filters: LPTFilters_TenSanPham,
             filterSearch: true,
+            onFilter: (value, record) => record.TenSanPham.includes(value),
             render: (text) =>
                 text && text.length > 5 ? (
                     <Tooltip title={text}>
@@ -506,20 +480,6 @@ const Admin_SP = () => {
                     text
                 ),
         },
-        // {
-        //     title: "Bộ phận nhận",
-        //     dataIndex: "BoPhanGui",
-        //     key: "BoPhanGui",
-        //     align: "center",
-        //     render: (text) =>
-        //         text && text.length > 40 ? (
-        //             <Tooltip title={text}>
-        //                 <span>{text.slice(0, 40)}...</span>
-        //             </Tooltip>
-        //         ) : (
-        //             text
-        //         ),
-        // },
         {
             title: 'Chi Tiết',
             key: 'insert',
@@ -571,7 +531,7 @@ const Admin_SP = () => {
                         </Popconfirm>
                     </span>
                 ) : (
-                    <Button type="link" disabled={editingKey !== ""} onClick={() => edit(record)}>
+                    <Button type="link" disabled={editingKey !== ""} onClick={(e) => { e.stopPropagation(); edit(record) }}>
                         Chỉnh sửa
                     </Button>
                 );
@@ -619,7 +579,7 @@ const Admin_SP = () => {
             },
         },
         {
-            title: 'Ngày Hiệu Lực',
+            title: 'Ngày hiệu lực',
             dataIndex: 'NgayHieuLuc',
             key: 'NgayHieuLuc',
             align: "center",
@@ -632,7 +592,7 @@ const Admin_SP = () => {
             render: (text, record) => (
                 <Button
                     type="primary"
-                    onClick={(e) => { e.stopPropagation(); handleViewDetails(record.TenTaiLieu, record.TenSanPham) }}
+                    onClick={(e) => { e.stopPropagation(); handleViewDetails(record.TenTaiLieu, record.TenSanPham, record.ItemCode) }}
                 >
                     Xem tất cả
                 </Button>
@@ -681,7 +641,7 @@ const Admin_SP = () => {
     const getLatestVersions = (list) => {
         const grouped = {};
         list.forEach(item => {
-            const key = `${item.MaSanPham}-${item.TenTaiLieu}`;
+            const key = `${item.MaCC}-${item.TenTaiLieu}-${item.ItemCode}`;
             const version = parseFloat(item.PhienBan); // Chuyển đổi thành số
 
             if (!grouped[key] || version > parseFloat(grouped[key].PhienBan)) {
@@ -689,7 +649,7 @@ const Admin_SP = () => {
             }
         });
         // Sắp xếp theo thứ tự giảm dần của PhienBan
-        return Object.values(grouped).sort((a, b) => b.NgayTao - a.NgayTao);
+        return Object.values(grouped).sort((a, b) => new Date(b.NgayTao) - new Date(a.NgayTao))
     };
 
     // Hàm tìm kiếm theo tên sản phẩm (lọc trên dữ liệu phiên bản mới nhất)
@@ -699,12 +659,11 @@ const Admin_SP = () => {
         );
         setData(filtered);
     };
-    const handleViewDetails = (TenTaiLieu, TenSanPham) => {
+    const handleViewDetails = (TenTaiLieu, TenSanPham, ItemCode) => {
         // Lọc ra các dòng có cùng TenTaiLieu và TenSanPham
         const details = allData.filter(item =>
-            item.TenTaiLieu === TenTaiLieu && item.TenSanPham === TenSanPham
+            item.TenTaiLieu === TenTaiLieu && item.TenSanPham === TenSanPham && item.ItemCode === ItemCode
         );
-
         // Nhóm dữ liệu theo TaiLieuId, mỗi TaiLieuId chỉ lấy dòng có phiên bản cao nhất
         const uniqueVersionsMap = new Map();
         details.forEach(item => {
@@ -713,16 +672,15 @@ const Admin_SP = () => {
                 uniqueVersionsMap.set(item.TaiLieuId, item);
             }
         });
-
         // Chuyển Map thành Array và sắp xếp theo PhienBan giảm dần
         const uniqueVersions = Array.from(uniqueVersionsMap.values())
             .sort((a, b) => parseFloat(b.PhienBan) - parseFloat(a.PhienBan));
 
         // Cập nhật modal
-        setModalData(uniqueVersions);
-        setModalTitle(TenTaiLieu);
+        setModalVersionData(uniqueVersions);
+        setModalTaiLieuTitle(TenTaiLieu);
         // setModalTitleId(TenTaiLieu);
-        setModalVisible(true);
+        setModalVersionVisible(true);
     };
 
 
@@ -744,6 +702,11 @@ const Admin_SP = () => {
             setData(filteredData);
         }
         else {
+            const allNames = Array.from(
+                new Set(allData.map(item => item.TenSanPham).filter(Boolean))
+            );
+
+            setAllProcessNames_(allNames);
             setData(getLatestVersions(allData))
         }
     };
@@ -815,14 +778,14 @@ const Admin_SP = () => {
             },
         },
         {
-            title: 'Ngày Hiệu Lực',
+            title: 'Ngày hiệu lực',
             dataIndex: 'NgayHieuLuc',
             key: 'NgayHieuLuc',
             align: "center",
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
         {
-            title: 'Ngày Tạo',
+            title: 'Ngày cập nhật',
             dataIndex: 'NgayTao',
             key: 'NgayTao',
             align: "center",
@@ -916,7 +879,7 @@ const Admin_SP = () => {
                                 allowClear
                                 placeholder="Chọn tài liệu"
                                 style={{ width: '100%' }}
-                                options={allProcessNames_.map(name => ({ label: name, value: name }))}
+                                options={optionsSelect}
                             />
                         </Card>
                     </Col>
@@ -938,20 +901,21 @@ const Admin_SP = () => {
                                             columns={mergedColumns}
                                             dataSource={groupedData}
                                             components={{
-                                                body: {
-                                                    // row: EditableRow,
-                                                    cell: EditableCell,
+                                                body: { cell: EditableCell },
+                                            }}
+                                            onRow={(record) => ({
+                                                onClick: (event) => {
+                                                    if (editingKey === record.SanPhamId) {
+                                                        // Nếu đang edit thì không làm gì cả
+                                                        event.stopPropagation();
+                                                        return;
+                                                    }
+                                                    setBPN(record.BoPhanGui);
+                                                    setModalTitle(record.TenSanPham)
+                                                    setModalData(record); // Lưu dữ liệu của dòng được click
+                                                    setModalVisible(true); // Hiển thị modal
                                                 },
-                                            }}
-                                            expandable={{
-                                                expandedRowRender: (record) => (
-                                                    <Table columns={expandColumns} dataSource={record.subItems} pagination={false}
-                                                        onRow={(record) => ({
-                                                            onClick: () => { setModalVisible(false); handleViewPdf(record) }
-                                                        })}
-                                                    />
-                                                ),
-                                            }}
+                                            })}
                                         />
                                     </Form>
                                 </Spin>
@@ -961,13 +925,52 @@ const Admin_SP = () => {
 
                     </Col>
                 </Row>
+                <Modal
+                    title={`Chi tiết sản phẩm: ${modalTitle}`} // Sử dụng modalTitle
+                    open={modalVisible}
+                    onCancel={() => setModalVisible(false)}
+                    footer={null}
+                    className={style.modalVersions}
+                    width={1000}
+                    style={{ backgroundColor: '#001529' }}
+                >
+                    <Card style={{ backgroundColor: '#001529', border: 'none' }}>
+                        <Tabs defaultActiveKey="1" className={style.customTabs}>
+                            <Tabs.TabPane tab="Tài liệu theo CCCode" key="1">
+                                <Table
+                                    className={style.tableVersions}
+                                    columns={expandColumns}
+                                    dataSource={modalData?.subItems || []} // Thay documentModalData thành modalData
+                                    pagination={false}
+                                />
+                            </Tabs.TabPane>
+                            <Tabs.TabPane tab="Tài liệu theo ItemCode" key="2">
+                                <Table
+                                    className={style.tableVersions}
+                                    columns={[
+                                        expandColumns[0], // Cột đầu tiên giữ nguyên
+                                        {
+                                            title: "ItemCode",
+                                            dataIndex: "ItemCode",
+                                            key: "ItemCode",
+                                            render: (text) => text || "N/A",
+                                        },
+                                        ...expandColumns.slice(1), // Giữ các cột còn lại sau cột đầu tiên
+                                    ]}
+                                    dataSource={modalData?.subItems_?.length ? modalData.subItems_ : []}
+                                    pagination={false}
+                                />
+                            </Tabs.TabPane>
+                        </Tabs>
+                    </Card>
+                </Modal>
                 {/* --- Modal "Xem tất cả các phiên bản" --- */}
                 <Modal
-                    title={modalTitle}
-                    visible={modalVisible}
-                    onCancel={() => setModalVisible(false)}
+                    title={modalTaiLieuTitle}
+                    visible={modalVersionVisible}
+                    onCancel={() => setModalVersionVisible(false)}
                     footer={[
-                        <Button key="close" onClick={() => setModalVisible(false)}>
+                        <Button key="close" onClick={() => setModalVersionVisible(false)}>
                             Đóng
                         </Button>
                     ]}
@@ -976,17 +979,16 @@ const Admin_SP = () => {
                     style={{ backgroundColor: '#001529' }}
                 >
                     <Table
-                        dataSource={modalData}
+                        dataSource={modalVersionData}
                         columns={modalVersionColumns}
                         rowKey="VersionId"
                         pagination={false}
                         className={style.tableVersions}
                         scroll={{ y: 55 * 9 }}
                         onRow={(record) => ({
-                            onClick: () => { setModalVisible(false); handleViewPdf(record) }
+                            onClick: () => { handleViewPdf(record) }
                         })}
                     />
-                    {/* --- Modal Thêm tài liệu --- */}
                 </Modal>
                 <Modal
                     title="Thêm tài liệu Mới"
@@ -1002,7 +1004,8 @@ const Admin_SP = () => {
                         </Button>
                     ]}
                 >
-                    <Form form={form} layout="vertical" className={style.formAddVersion}>
+                    <Form form={form} layout="vertical" className={style.formAddVersion}
+                    >
                         <Form.Item
                             label="Tên tài liệu"
                             name="TenTaiLieu"
@@ -1010,13 +1013,26 @@ const Admin_SP = () => {
                         >
                             <Input placeholder="Nhập tên tài liệu" />
                         </Form.Item>
-                        <Form.Item
-                            label="Mùa sản phẩm"
-                            name="MuaSanPham"
-                        // rules={[{ required: fas, message: 'Vui lòng nhập mùa sản phẩm!' }]}
-                        >
-                            <Input placeholder="Nhập mùa sản phẩm" />
-                        </Form.Item>
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item
+                                    label="Mùa sản phẩm"
+                                    name="MuaSanPham"
+                                // rules={[{ required: fas, message: 'Vui lòng nhập mùa sản phẩm!' }]}
+                                >
+                                    <Input placeholder="Nhập mùa sản phẩm" />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item
+                                    label="Item Code"
+                                    name="MaSanPham"
+                                // rules={[{ required: true, message: 'Vui lòng nhập Item Code!' }]}
+                                >
+                                    <Input placeholder="Nhập Item Code" />
+                                </Form.Item>
+                            </Col>
+                        </Row>
                         <Form.Item
                             label="Phiên Bản"
                             name="PhienBan"
@@ -1025,9 +1041,9 @@ const Admin_SP = () => {
                             <Input placeholder="Nhập số phiên bản" />
                         </Form.Item>
                         <Form.Item
-                            label="Ngày Hiệu Lực"
+                            label="Ngày hiệu lực"
                             name="NgayHieuLuc"
-                            rules={[{ required: true, message: 'Vui lòng chọn ngày hiệu lực!' }]}
+                            rules={[{ required: true, message: 'Vui lòng chọn Ngày hiệu lực!' }]}
                         >
                             <DatePicker format="YYYY-MM-DD" />
                         </Form.Item>
@@ -1190,29 +1206,9 @@ const Admin_SP = () => {
                                 <Form.Item
                                     label="CC Code"
                                     name="MaCC"
-                                // rules={[{ required: true, message: 'Vui lòng nhập CC Code!' }]}
+                                    rules={[{ required: true, message: 'Vui lòng nhập CC Code!' }]}
                                 >
                                     <Input placeholder="Nhập CC Code" />
-                                </Form.Item>
-                            </Col>
-                            <Col span={12}>
-                                <Form.Item
-                                    label="Model Code"
-                                    name="MaModel"
-                                // rules={[{ required: true, message: 'Vui lòng nhập Model Code!' }]}
-                                >
-                                    <Input placeholder="Nhập Model Code" />
-                                </Form.Item>
-                            </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={12}>
-                                <Form.Item
-                                    label="Item Code"
-                                    name="MaSanPham"
-                                // rules={[{ required: true, message: 'Vui lòng nhập Item Code!' }]}
-                                >
-                                    <Input placeholder="Nhập Item Code" />
                                 </Form.Item>
                             </Col>
                             <Col span={12}>
@@ -1250,7 +1246,7 @@ const Admin_SP = () => {
                 {pdfVisible && (
                     <ViewerPDF
                         fileUrl={pdfUrl}
-                        onClose={() => { setPdfVisible(false) }}
+                        onClose={() => { setModalVisible(true); setModalVersionVisible(true); setPdfVisible(false) }}
                         onComment={handleOpenCommentModal}
                     />
                 )}

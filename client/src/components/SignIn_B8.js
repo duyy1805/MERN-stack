@@ -39,6 +39,7 @@ const SignIn_B8 = () => {
                 localStorage.setItem("userId", userId);
                 localStorage.setItem("role", role);
                 localStorage.setItem("HoTen", hoTen);
+                console.log(response.data)
                 history.push("B8/AdminDashboard");
                 messageApi.open({
                     type: 'success',

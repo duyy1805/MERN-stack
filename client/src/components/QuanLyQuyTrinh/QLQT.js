@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
     Row, Col, Input, Table, Spin, message, Button, Modal, Tooltip,
     Upload, Form, DatePicker, Select, Layout, Menu, Dropdown, Avatar,
-    Card
+    Card, Typography
 } from 'antd';
 import { PieChart, Pie, Cell, Tooltip as TooltipRechart, Legend, ResponsiveContainer } from "recharts";
 import { UploadOutlined, SettingOutlined, UserOutlined } from '@ant-design/icons';
@@ -180,14 +180,14 @@ const QLQT = () => {
             },
         },
         {
-            title: 'Ngày Hiệu Lực',
+            title: 'Ngày hiệu lực',
             dataIndex: 'NgayHieuLuc',
             key: 'NgayHieuLuc',
             align: 'center',
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
         {
-            title: 'Ngày Tạo',
+            title: 'Ngày cập nhật',
             dataIndex: 'NgayTao',
             key: 'NgayTao',
             align: 'center',
@@ -233,7 +233,7 @@ const QLQT = () => {
             }
         });
         // Sắp xếp theo thứ tự giảm dần của PhienBan
-        return Object.values(grouped).sort((a, b) => b.NgayTao - a.NgayTao);
+        return Object.values(grouped).sort((a, b) => new Date(b.NgayTao) - new Date(a.NgayTao))
     };
     // Hàm tìm kiếm theo tên quy trình (lọc trên dữ liệu phiên bản mới nhất)
     const onSearch = (value) => {
@@ -291,14 +291,14 @@ const QLQT = () => {
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
         {
-            title: 'Ngày Hiệu Lực',
+            title: 'Ngày hiệu lực',
             dataIndex: 'NgayHieuLuc',
             key: 'NgayHieuLuc',
             align: "center",
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
         {
-            title: 'Ngày Tạo',
+            title: 'Ngày cập nhật',
             dataIndex: 'NgayTao',
             key: 'NgayTao',
             align: "center",
@@ -314,6 +314,11 @@ const QLQT = () => {
             }
         }
     ];
+    const taiLieuMoi = allData.filter(record => {
+        if (!record.NgayTao) return false;
+        const ngayTao = dayjs(record.NgayTao);
+        return dayjs().diff(ngayTao, "day") < 30;
+    });
     const taiLieuGuiMail = allData.filter(record => {
         const boPhanGuiArray = record.BoPhanGui ? record.BoPhanGui.split(',') : [];
         return boPhanGuiArray.includes(record.BoPhan);
@@ -334,7 +339,7 @@ const QLQT = () => {
                 <Row gutter={[16, 16]}>
                     {/* Cột bên trái: ô tìm kiếm */}
                     <Col xs={24} sm={8}>
-                        <Card title="Tài liệu được nhận">
+                        <Card title="Tài liệu được nhận" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
                             <ResponsiveContainer width="100%" height={100}>
                                 <PieChart >
                                     <Pie
@@ -356,7 +361,7 @@ const QLQT = () => {
                             </ResponsiveContainer>
                         </Card>
                     </Col>
-                    <Col xs={24} sm={8}>
+                    {/* <Col xs={24} sm={8}>
                         <Card >
                             <Select
                                 showSearch
@@ -368,8 +373,15 @@ const QLQT = () => {
                                 options={allProcessNames.map(name => ({ label: name, value: name }))}
                             />
                         </Card>
-                    </Col>
+                    </Col> */}
                     {/* Cột bên phải: bảng danh sách phiên bản mới nhất */}
+                    <Col xs={24} sm={8}>
+                        <Card title="Tài liệu mới" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
+                            <Typography.Title level={2} style={{ color: "#fff", textAlign: "center" }}>
+                                {taiLieuMoi.length}
+                            </Typography.Title>
+                        </Card>
+                    </Col>
                     <Col xs={24} sm={24}>
                         <Card style={{ backgroundColor: '#001529', border: 'none' }}>
                             {loading ? <Spin /> : <Table

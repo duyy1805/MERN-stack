@@ -96,6 +96,11 @@
     scrollbar-color: white #001529;
 }
 
+.customTabs :global(.ant-tabs-tab) {
+    color: white !important;
+    /* Chữ tab màu trắng khi chưa active */
+}
+
 .filterDropdown {
     width: 200px !important;
     min-width: 200px !important;
