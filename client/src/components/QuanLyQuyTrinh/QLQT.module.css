@@ -82,6 +82,11 @@
     color: white !important;
 }
 
+.customTabs :global(.ant-tabs-tab) {
+    color: white !important;
+    /* Chữ tab màu trắng khi chưa active */
+}
+
 /* Tùy chỉnh thanh cuộn trong bảng */
 :global(.ant-table-body) {
     scrollbar-color: white #001529;

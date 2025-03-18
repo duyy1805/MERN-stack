@@ -1,10 +1,9 @@
 import React, { useState } from "react";
-import { Form, Input, Button, Typography, Row, Col, Switch, Layout, Radio, message, Image } from "antd";
+import { Form, Input, Button, Typography, Row, Col, Switch, Layout, message, Image } from "antd";
 import { Link, useHistory } from "react-router-dom";
 import "./Style.css";
 import axios from "axios";
 import apiConfig from '../apiConfig.json';
-import { v4 as uuidv4 } from 'uuid';
 
 const { Title } = Typography;
 const { Content } = Layout;
@@ -12,20 +11,9 @@ const { Content } = Layout;
 const SignIn_B8 = () => {
     const [messageApi, contextHolder] = message.useMessage();
     const history = useHistory();
-    const [loginType, setLoginType] = useState("A"); // "A" hoặc "B"
-
-    const getDeviceId = () => {
-        let deviceId = localStorage.getItem('deviceId');
-        if (!deviceId) {
-            deviceId = uuidv4();
-            localStorage.setItem('deviceId', deviceId);
-        }
-        return deviceId;
-    };
 
     const onFinish = async (values) => {
         console.log("Success:", values);
-        const uuid = getDeviceId();
         const { email, password } = values;
 
         try {

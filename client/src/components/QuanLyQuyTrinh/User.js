@@ -8,6 +8,7 @@ import {
 } from "@ant-design/icons";
 import QLQT from "./QLQT";
 import QLTL from "./QLTL";
+import QLTL_Ikea from "./QLTL_Ikea";
 import { Link, useHistory } from "react-router-dom";
 
 const { Header, Sider, Content } = Layout;
@@ -38,7 +39,8 @@ const User = () => {
     );
     const menuItems = [
         { key: "QLQT", icon: <DashboardOutlined />, label: "Quy trình" },
-        { key: "QLTL", icon: <FileOutlined />, label: "Tài liệu kỹ thuật" },
+        { key: "QLTL", icon: <FileOutlined />, label: "Sản phẩm DEK" },
+        { key: "QLTL_Ikea", icon: <FileOutlined />, label: "Sản phẩm IKEA" },
         // { key: "ChartDasdboard", icon: <UserOutlined />, label: "ChartDasdboard" },
     ];
 
@@ -48,6 +50,8 @@ const User = () => {
                 return <QLQT />;
             case "QLTL":
                 return <QLTL />;
+            case "QLTL_Ikea":
+                return <QLTL_Ikea />;
             // case "documents":
             //     return <Documents />;
             default:

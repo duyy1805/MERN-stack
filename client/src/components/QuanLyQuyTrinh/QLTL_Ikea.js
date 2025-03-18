@@ -16,50 +16,8 @@ import style from './QLQT.module.css';
 const { Search } = Input;
 const { Header, Content } = Layout;
 
-const AppHeader = () => {
-    const history = useHistory();
-    const handleLogout = () => {
-        // Xóa dữ liệu lưu trữ và chuyển hướng
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('role');
-        localStorage.removeItem('HoTen');
-        history.push('/B8'); // chuyển hướng về trang login
-    };
-    const menu = (
-        <Menu>
-            <Menu.Item key="account">
-                <a href="/account">Tài khoản</a>
-            </Menu.Item>
-            <Menu.Item key="settings">
-                <a href="/settings">Cài đặt</a>
-            </Menu.Item>
-            <Menu.Item key="logout" onClick={handleLogout}>
-                Log Out
-            </Menu.Item>
-        </Menu>
-    );
 
-    return (
-        <Header style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            background: '#fff',
-            padding: '0 20px'
-        }}>
-            <div style={{ fontSize: '20px', fontWeight: 'bold' }}>Quản lý sản phẩm</div>
-            <Dropdown overlay={menu} trigger={['click']}>
-                <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                    <Avatar icon={<UserOutlined />} />
-                    <span style={{ marginLeft: '8px' }}>{localStorage.getItem('HoTen')}</span>
-                    {/* <SettingOutlined style={{ marginLeft: '8px' }} /> */}
-                </div>
-            </Dropdown>
-        </Header>
-    );
-};
-
-const QLTL = () => {
+const QLTL_Ikea = () => {
     const [allData, setAllData] = useState([]); // tất cả phiên bản của các sản phẩm
     const [data, setData] = useState([]);         // phiên bản mới nhất của mỗi sản phẩm
     const [allProcessNames, setAllProcessNames] = useState([]);
@@ -128,7 +86,7 @@ const QLTL = () => {
             const res = await axios.get(`${apiConfig.API_BASE_URL}/B8/sanpham`, {
                 params: { userId } // truyền userId vào query string
             });
-            const list = res.data.filter(item => item.KhachHang === "DEK");
+            const list = res.data.filter(item => item.KhachHang === "IKEA");
             setAllData(list);
             setData(getLatestVersions(list));
 
@@ -210,7 +168,6 @@ const QLTL = () => {
                     ...item,
                     key,  // Thêm key để React không bị lỗi render
                     subItems: [],
-                    subItems_: [],
                 };
             }
 
@@ -220,13 +177,6 @@ const QLTL = () => {
                     key: `${item.TaiLieuId}-${item.PhienBan}`
                 });
             }
-            if (item.CCCode === null && item.ItemCode !== null) {
-                acc[key].subItems_.push({
-                    ...item,
-                    key: `${item.TaiLieuId}-${item.PhienBan}`
-                });
-            }
-
             return acc;
         }, {})
     );
@@ -482,7 +432,7 @@ const QLTL = () => {
         const usersData = allData.filter(item =>
             item.TaiLieuId === record.TaiLieuId &&
             // (boPhanGuiArray.length === 0 || boPhanGuiArray.includes(item.BoPhan)) && 
-            item.ChucVu !== "admin" // Loại bỏ admin
+            item.ChucVu !== "admin"
         );
 
         setStatusData(usersData);
@@ -582,41 +532,16 @@ const QLTL = () => {
                     style={{ backgroundColor: '#001529' }}
                 >
                     <Card style={{ backgroundColor: '#001529', border: 'none' }}>
-                        <Tabs defaultActiveKey="1" className={style.customTabs}>
-                            <Tabs.TabPane tab="Tài liệu theo CCCode" key="1">
-                                <Table
-                                    className={style.tableVersions}
-                                    columns={expandColumns}
-                                    dataSource={modalData?.subItems || []} // Thay documentModalData thành modalData
-                                    pagination={false}
-                                    onRow={(record) => ({
-                                        onClick: () => { handleViewPdf(record) }
-                                    })}
-                                    rowClassName={(record) => record.TrangThai === 'Chưa xem' ? style.notViewed : ''}
-                                />
-                            </Tabs.TabPane>
-                            <Tabs.TabPane tab="Tài liệu theo ItemCode" key="2">
-                                <Table
-                                    className={style.tableVersions}
-                                    columns={[
-                                        expandColumns[0], // Cột đầu tiên giữ nguyên
-                                        {
-                                            title: "ItemCode",
-                                            dataIndex: "ItemCode",
-                                            key: "ItemCode",
-                                            render: (text) => text || "N/A",
-                                        },
-                                        ...expandColumns.slice(1), // Giữ các cột còn lại sau cột đầu tiên
-                                    ]}
-                                    dataSource={modalData?.subItems_?.length ? modalData.subItems_ : []}
-                                    pagination={false}
-                                    onRow={(record) => ({
-                                        onClick: () => { handleViewPdf(record) }
-                                    })}
-                                    rowClassName={(record) => record.TrangThai === 'Chưa xem' ? style.notViewed : ''}
-                                />
-                            </Tabs.TabPane>
-                        </Tabs>
+                        <Table
+                            className={style.tableVersions}
+                            columns={expandColumns}
+                            dataSource={modalData?.subItems || []} // Thay documentModalData thành modalData
+                            pagination={true}
+                            onRow={(record) => ({
+                                onClick: () => { handleViewPdf(record) }
+                            })}
+                            rowClassName={(record) => record.TrangThai === 'Chưa xem' ? style.notViewed : ''}
+                        />
                     </Card>
                 </Modal>
                 <Modal
@@ -667,7 +592,7 @@ const QLTL = () => {
                 {pdfVisible && (
                     <ViewerPDF
                         fileUrl={pdfUrl}
-                        onClose={() => { fetchData(); setPdfVisible(false) }}
+                        onClose={() => { fetchData(); setModalVisible(true); setPdfVisible(false) }}
                         onComment={handleOpenCommentModal}
                     />
                 )}
@@ -676,4 +601,4 @@ const QLTL = () => {
     );
 };
 
-export default QLTL;
+export default QLTL_Ikea;

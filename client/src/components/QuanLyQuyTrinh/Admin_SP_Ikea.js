@@ -66,7 +66,7 @@ const EditableCell = ({
     );
 };
 
-const Admin_SP = () => {
+const Admin_SP_Ikea = () => {
     const [allData, setAllData] = useState([]); // tất cả phiên bản của các sản phẩm
     const [data, setData] = useState([]);         // phiên bản mới nhất của mỗi sản phẩm
     const [allProcessNames, setAllProcessNames] = useState([]);
@@ -107,9 +107,9 @@ const Admin_SP = () => {
     const [statusData, setStatusData] = useState([]);
 
     const [messageApi, contextHolder] = message.useMessage();
-    const role = localStorage.getItem('role');
+    const currentRole = localStorage.getItem('role');
     const isEditing = (record) => record.SanPhamId === editingKey;
-
+    const role = localStorage.getItem("role");
     const edit = (record) => {
         formEdit.setFieldsValue({ ...record });
         setEditingKey(record.SanPhamId);
@@ -171,7 +171,7 @@ const Admin_SP = () => {
         setLoading(true);
         try {
             const res = await axios.get(`${apiConfig.API_BASE_URL}/B8/sanphamall`);
-            const list = res.data.filter(item => item.KhachHang === "DEK");
+            const list = res.data.filter(item => item.KhachHang === "IKEA");
             setAllData(list);
             setData(getLatestVersions(list));
             console.log(getLatestVersions(list))
@@ -219,8 +219,6 @@ const Admin_SP = () => {
                 KhachHang: values.KhachHang,
                 DongHang: values.DongHang,
                 MaCC: values.MaCC,
-                // MaModel: values.MaModel,
-                // MaSanPham: values.MaSanPham,
                 TheLoai: values.TheLoai,
                 TenSanPham: values.TenSanPham,
                 BoPhanIds: values.BoPhanIds // Dữ liệu mảng
@@ -278,18 +276,10 @@ const Admin_SP = () => {
             formData.append('SanPhamId', modalTitleId);
             formData.append('TenTaiLieu', values.TenTaiLieu);
             formData.append('BoPhanBanHanh', values.BoPhanBanHanh);
-            if (!values.MaSanPham || values.MaSanPham.trim() === "") {
-                formData.append('MaSanPham', "NULL"); // Hoặc có thể không thêm vào nếu API hỗ trợ
-            } else {
-                formData.append('MaSanPham', values.MaSanPham);
-            }
-            if (!values.MuaSanPham || values.MuaSanPham.trim() === "") {
-                formData.append('MuaSanPham', "NULL"); // Hoặc có thể không thêm vào nếu API hỗ trợ
-            } else {
-                formData.append('MuaSanPham', values.MuaSanPham);
-            }
+            formData.append('MaSanPham', "NULL");
+            formData.append('MuaSanPham', "NULL");
             if (!values.PhienBan || values.PhienBan.trim() === "") {
-                formData.append('PhienBan', "NULL"); // Hoặc có thể không thêm vào nếu API hỗ trợ
+                formData.append('PhienBan', 0); // Hoặc có thể không thêm vào nếu API hỗ trợ
             } else {
                 formData.append('PhienBan', values.PhienBan);
             }
@@ -341,7 +331,6 @@ const Admin_SP = () => {
                 return {
                     ...prevData,
                     subItems: prevData.subItems?.filter(sub => sub.TaiLieuId !== TaiLieuId) || [],
-                    subItems_: prevData.subItems_?.filter(sub => sub.TaiLieuId !== TaiLieuId) || [],
                 };
             });
             setModalVersionData(prevVersions =>
@@ -404,27 +393,19 @@ const Admin_SP = () => {
         label: bp
     }));
     const khachHangOptions = [
-        { value: "DEK", label: "DEK" }
+        { value: "IKEA", label: "IKEA" }
     ];
     const dongHangOptions = [
-        { value: "DOMYOS", label: "DOMYOS" },
-        { value: "NO BRAND", label: "NO BRAND" },
-        { value: "FORCLAZ", label: "FORCLAZ" },
-        { value: "KIPSTA", label: "KIPSTA" },
-        { value: "QUECHUA", label: "QUECHUA" },
-        { value: "ARTENGO", label: "ARTENGO" },
-        { value: "ELOPS", label: "ELOPS" },
-        { value: "KALENJI", label: "KALENJI" },
-        { value: "OXELO", label: "OXELO" },
-        { value: "STAREVER", label: "STAREVER" },
-        { value: "FOUGANZA", label: "FOUGANZA" },
-        { value: "PONGORI", label: "PONGORI" },
-        { value: "BTWIN", label: "BTWIN" }
+        { value: "HFB4", label: "HFB4" },
+        { value: "HFB6", label: "HFB6" },
+        { value: "HFB9", label: "HFB9" },
+        { value: "HFB11", label: "HFB11" },
+        { value: "HFB12", label: "HFB12" },
+        { value: "HFB15", label: "HFB15" },
+        { value: "HFB17", label: "HFB17" },
+        { value: "HFB18", label: "HFB18" }
     ];
-    const theLoaiOptions = [
-        { value: "BAG", label: "BAG" },
-        { value: "TENT", label: "TENT" },
-    ];
+
     const LPTFilters = createFilters('BoPhanBanHanh');
     const LPTFilters_TenSanPham = createFilters('TenSanPham');
     const CCCodeFilters = createFilters('MaCC')
@@ -447,13 +428,6 @@ const Admin_SP = () => {
                     key: `${item.TaiLieuId}-${item.PhienBan}`
                 });
             }
-            if (item.CCCode === null && item.ItemCode !== null) {
-                acc[key].subItems_.push({
-                    ...item,
-                    key: `${item.TaiLieuId}-${item.PhienBan}`
-                });
-            }
-
             return acc;
         }, {})
     );
@@ -479,7 +453,7 @@ const Admin_SP = () => {
             editable: true,
         },
         {
-            title: "CCCode",
+            title: "Item Number",
             dataIndex: "MaCC",
             key: "MaCC",
             align: "center",
@@ -498,7 +472,7 @@ const Admin_SP = () => {
             filterSearch: true,
             onFilter: (value, record) => record.TenSanPham.includes(value),
             render: (text) =>
-                text && text.length > 50 ? (
+                text && text.length > 5 ? (
                     <Tooltip title={text}>
                         <span>{text.slice(0, 50)}...</span>
                     </Tooltip>
@@ -608,13 +582,6 @@ const Admin_SP = () => {
             align: "center",
         },
         {
-            title: 'Mùa sản phẩm',
-            dataIndex: 'MuaSanPham',
-            key: 'MuaSanPham',
-            align: "center",
-            render: (text) => text || "",
-        },
-        {
             title: 'Phiên bản',
             dataIndex: 'FilePDF',
             key: 'FilePDF',
@@ -648,7 +615,7 @@ const Admin_SP = () => {
                     type="primary"
                     onClick={(e) => { e.stopPropagation(); handleViewDetails(record.TenTaiLieu, record.TenSanPham, record.ItemCode) }}
                 >
-                    Xem
+                    Xem tất cả
                 </Button>
             ),
         },
@@ -813,13 +780,6 @@ const Admin_SP = () => {
 
     // ----- Các cột cho Modal "Xem chi tiết" chỉ hiển thị thông tin Version -----
     const modalVersionColumns = [
-        {
-            title: 'Mùa sản phẩm',
-            dataIndex: 'MuaSanPham',
-            key: 'MuaSanPham',
-            align: "center",
-            render: (text) => text || "",
-        },
         {
             title: 'Phiên bản',
             dataIndex: 'FilePDF',
@@ -1003,39 +963,15 @@ const Admin_SP = () => {
                     style={{ backgroundColor: '#001529' }}
                 >
                     <Card style={{ backgroundColor: '#001529', border: 'none' }}>
-                        <Tabs defaultActiveKey="1" className={style.customTabs}>
-                            <Tabs.TabPane tab="Tài liệu theo CCCode" key="1">
-                                <Table
-                                    className={style.tableVersions}
-                                    columns={expandColumns}
-                                    dataSource={modalData?.subItems || []} // Thay documentModalData thành modalData
-                                    pagination={false}
-                                    onRow={(record) => ({
-                                        onClick: () => { handleViewPdf(record) }
-                                    })}
-                                />
-                            </Tabs.TabPane>
-                            <Tabs.TabPane tab="Tài liệu theo ItemCode" key="2">
-                                <Table
-                                    className={style.tableVersions}
-                                    columns={[
-                                        expandColumns[0], // Cột đầu tiên giữ nguyên
-                                        {
-                                            title: "ItemCode",
-                                            dataIndex: "ItemCode",
-                                            key: "ItemCode",
-                                            render: (text) => text || "N/A",
-                                        },
-                                        ...expandColumns.slice(1), // Giữ các cột còn lại sau cột đầu tiên
-                                    ]}
-                                    dataSource={modalData?.subItems_?.length ? modalData.subItems_ : []}
-                                    pagination={false}
-                                    onRow={(record) => ({
-                                        onClick: () => { handleViewPdf(record) }
-                                    })}
-                                />
-                            </Tabs.TabPane>
-                        </Tabs>
+                        <Table
+                            className={style.tableVersions}
+                            columns={expandColumns}
+                            dataSource={modalData?.subItems || []} // Thay documentModalData thành modalData
+                            pagination={false}
+                            onRow={(record) => ({
+                                onClick: () => { handleViewPdf(record) }
+                            })}
+                        />
                     </Card>
                 </Modal>
                 {/* --- Modal "Xem tất cả các phiên bản" --- */}
@@ -1087,26 +1023,25 @@ const Admin_SP = () => {
                         >
                             <Input placeholder="Nhập tên tài liệu" />
                         </Form.Item>
-                        <Row gutter={16}>
+                        {/* <Row gutter={16}>
                             <Col span={12}>
                                 <Form.Item
-                                    label="Mùa sản phẩm"
+                                    label=" "
                                     name="MuaSanPham"
-                                // rules={[{ required: fas, message: 'Vui lòng nhập mùa sản phẩm!' }]}
                                 >
-                                    <Input placeholder="Nhập mùa sản phẩm" />
+                                    <Input placeholder="Nhập mùa sản phẩm" hidden />
                                 </Form.Item>
                             </Col>
                             <Col span={12}>
                                 <Form.Item
-                                    label="Item Code"
+                                    label=" "
                                     name="MaSanPham"
                                 // rules={[{ required: true, message: 'Vui lòng nhập Item Code!' }]}
                                 >
-                                    <Input placeholder="Nhập Item Code" />
+                                    <Input placeholder="Do nothing" hidden />
                                 </Form.Item>
                             </Col>
-                        </Row>
+                        </Row> */}
                         <Form.Item
                             label="Phiên Bản"
                             name="PhienBan"
@@ -1288,11 +1223,11 @@ const Admin_SP = () => {
                         <Row gutter={16}>
                             <Col span={12}>
                                 <Form.Item
-                                    label="CC Code"
+                                    label="Item Number"
                                     name="MaCC"
                                     rules={[{ required: true, message: 'Vui lòng nhập CC Code!' }]}
                                 >
-                                    <Input placeholder="Nhập CC Code" />
+                                    <Input placeholder="Nhập Item Number" />
                                 </Form.Item>
                             </Col>
                             <Col span={12}>
@@ -1301,10 +1236,7 @@ const Admin_SP = () => {
                                     name="TheLoai"
                                 // rules={[{ required: true, message: 'Vui lòng nhập Thể Loại!' }]}
                                 >
-                                    <Select
-                                        placeholder="Thể loại"
-                                        options={theLoaiOptions}
-                                    />
+                                    <Input placeholder="Nhập thể loại" />
                                 </Form.Item>
                             </Col>
                         </Row>
@@ -1342,4 +1274,4 @@ const Admin_SP = () => {
     );
 };
 
-export default Admin_SP;
+export default Admin_SP_Ikea;

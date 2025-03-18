@@ -42,7 +42,7 @@ const PrivateRoute_B8 = ({ component: Component, rolesAllowed, ...rest }) => {
             {...rest}
             render={(props) =>
                 isAuthenticated ? (
-                    rolesAllowed.includes(role) ? (
+                    rolesAllowed.some((allowedRole) => role.includes(allowedRole)) ? (
                         <Component {...props} /> // Nếu đúng quyền yêu cầu, render component
                     ) : (
                         // Nếu không đúng role, chuyển hướng
@@ -57,7 +57,6 @@ const PrivateRoute_B8 = ({ component: Component, rolesAllowed, ...rest }) => {
                         />
                     )
                 ) : (
-                    // Nếu chưa đăng nhập hoặc token không hợp lệ, chuyển hướng đến trang đăng nhập
                     <Redirect to="/B8" />
                 )
             }

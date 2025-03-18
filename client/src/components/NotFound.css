@@ -1,0 +1,33 @@
+.notfound-container {
+    padding: 40px 0;
+    background: #fff;
+    font-family: "Arvo", serif;
+    text-align: center;
+}
+
+.notfound-bg {
+    background-image: url(https://cdn.dribbble.com/users/285475/screenshots/2083086/dribbble_1.gif);
+    height: 400px;
+    background-position: center;
+    background-size: cover;
+}
+
+.notfound-bg h1 {
+    font-size: 80px;
+    margin: 0;
+}
+
+.notfound-link {
+    color: #fff !important;
+    padding: 10px 20px;
+    background: #39ac31;
+    margin: 20px 0;
+    display: inline-block;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+.notfound-link:hover {
+    background: #2d8a27;
+}

@@ -54,7 +54,7 @@ const EditableCell = ({
                 <Form.Item
                     name={dataIndex} // Quan trọng! Phải có name để lấy dữ liệu
                     style={{ margin: 0 }}
-                    rules={[{ required: true, message: `Vui lòng nhập ${title}` }]}
+                // rules={[{ required: true, message: `Vui lòng nhập ${title}` }]}
                 >
                     <Input defaultValue={record[dataIndex]} />
                 </Form.Item>
@@ -147,6 +147,8 @@ const Admin = () => {
     const [processForm] = Form.useForm();
     const [formEdit] = Form.useForm();
     const [editingKey, setEditingKey] = useState("");
+    const [formEdit_] = Form.useForm();
+    const [editingKey_, setEditingKey_] = useState("");
 
     const [addProcessModalVisible, setAddProcessModalVisible] = useState(false);
     const [addVersionModalVisible, setAddVersionModalVisible] = useState(false);
@@ -167,9 +169,11 @@ const Admin = () => {
     const [statusData, setStatusData] = useState([]);
 
     const [messageApi, contextHolder] = message.useMessage();
-    const currentRole = localStorage.getItem('role');
+    const role = localStorage.getItem('role');
 
     const isEditing = (record) => record.QuyTrinhId === editingKey;
+    const isEditing_ = (record) => record.QuyTrinhVersionId === editingKey_;
+
     const edit = (record) => {
         formEdit.setFieldsValue({ ...record });
         setEditingKey(record.QuyTrinhId);
@@ -192,6 +196,32 @@ const Admin = () => {
                 );
             }
             setEditingKey("");
+        } catch (errInfo) {
+            console.log("Lỗi khi lưu:", errInfo);
+        }
+    };
+    const edit_ = (record) => {
+        formEdit_.setFieldsValue({ ...record });
+        setEditingKey_(record.QuyTrinhVersionId);
+    };
+
+    const cancel_ = () => {
+        setEditingKey_("");
+    };
+
+    const save_ = async (key) => {
+        try {
+            const row = await formEdit.validateFields();
+            const updatedData = { ...row, Id: key };
+            const response = await axios.put(`${apiConfig.API_BASE_URL}/B8/capnhatquytrinh`, updatedData);
+            if (response.status === 200) {
+                setData((prevData) =>
+                    prevData.map((item) =>
+                        item.QuyTrinhId === key ? { ...item, ...updatedData } : item
+                    )
+                );
+            }
+            setEditingKey_("");
         } catch (errInfo) {
             console.log("Lỗi khi lưu:", errInfo);
         }
@@ -324,13 +354,17 @@ const Admin = () => {
                 messageApi.open({ type: 'error', content: `Vui lòng tải lên file PDF!` });
                 return;
             }
-
             const formData = new FormData();
             formData.append('QuyTrinhId', modalTitleId);
             formData.append('TenQuyTrinh', modalTitle);
             formData.append('PhienBan', values.PhienBan);
             formData.append('NgayHieuLuc', values.NgayHieuLuc.format('YYYY-MM-DD'));
             formData.append('File', file);
+            if (!values.NoiDungChinhSua || values.NoiDungChinhSua.trim() === "") {
+                formData.append('NoiDungChinhSua', "NULL"); // Hoặc có thể không thêm vào nếu API hỗ trợ
+            } else {
+                formData.append('NoiDungChinhSua', values.NoiDungChinhSua);
+            }
             formData.append('CurrentUrl', window.location.href);
             values.BoPhanIds.forEach(id => formData.append('BoPhanIds', id));
 
@@ -344,6 +378,7 @@ const Admin = () => {
             });
 
             messageApi.open({ type: 'success', content: `Thêm phiên bản thành công!` });
+
             await fetchData();
             setAddVersionModalVisible(false);
             form.resetFields();
@@ -359,7 +394,6 @@ const Admin = () => {
             setLoading(false);
         }
     };
-
     const handleDeleteVersion = async (QuyTrinhVersionId) => {
         try {
             setLoading(true);
@@ -367,6 +401,9 @@ const Admin = () => {
                 QuyTrinhVersionId
             });
             messageApi.open({ type: 'success', content: "Xóa phiên bản thành công!" });
+            setModalData(prevVersions =>
+                prevVersions.filter(version => version.QuyTrinhVersionId !== QuyTrinhVersionId)
+            );
             await fetchData(); // Cập nhật danh sách sau khi xóa
 
         } catch (error) {
@@ -441,6 +478,7 @@ const Admin = () => {
             editable: true,
             filters: LPTFilters_TenQuyTrinh,
             filterSearch: true,
+            onFilter: (value, record) => record.TenQuyTrinh.includes(value),
             render: (text) =>
                 text && text.length > 100 ? (
                     <Tooltip title={text}>
@@ -496,54 +534,58 @@ const Admin = () => {
                     type="primary"
                     onClick={(e) => { e.stopPropagation(); handleViewDetails(record.QuyTrinhId, record.TenQuyTrinh); }}
                 >
-                    Xem tất cả
+                    Phiên bản
                 </Button>
             ),
         },
-        {
-            title: '',
-            key: 'delete',
-            align: "center",
-            render: (text, record) => (
-                <Popconfirm
-                    title="Bạn có chắc chắn muốn xóa quy trình này?"
-                    onConfirm={(e) => { e.stopPropagation(); handleDeleteQuyTrinh(record.QuyTrinhId) }}
-                    onCancel={(e) => e.stopPropagation()}
-                    okText="Xóa"
-                    cancelText="Hủy"
-                >
-                    <Button type="primary" danger onClick={(e) => e.stopPropagation()}>
-                        Xóa
-                    </Button>
-                </Popconfirm>
-            ),
-        },
-        {
-            title: "",
-            key: "edit",
-            align: "center",
-            render: (_, record) => {
-                const editable = isEditing(record);
-                return editable ? (
-                    <span>
-                        <Button
-                            type="link"
-                            onClick={(e) => { e.stopPropagation(); save(record.QuyTrinhId) }}
-                            style={{ marginRight: 8 }}
+        ...(role === "admin"
+            ? [
+                {
+                    title: '',
+                    key: 'delete',
+                    align: "center",
+                    render: (text, record) => (
+                        <Popconfirm
+                            title="Bạn có chắc chắn muốn xóa phiên bản này?"
+                            onConfirm={(e) => { e.stopPropagation(); handleDeleteVersion(record.QuyTrinhVersionId) }}
+                            onCancel={(e) => e.stopPropagation()}
+                            okText="Xóa"
+                            cancelText="Hủy"
                         >
-                            Lưu
-                        </Button>
-                        <Popconfirm title="Hủy chỉnh sửa?" onConfirm={(e) => { e.stopPropagation(); cancel() }} onCancel={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation() }}>
-                            <Button type="link">Hủy</Button>
+                            <Button type="primary" danger onClick={(e) => e.stopPropagation()}>
+                                Xóa
+                            </Button>
                         </Popconfirm>
-                    </span>
-                ) : (
-                    <Button type="link" disabled={editingKey !== ""} onClick={(e) => { e.stopPropagation(); edit(record) }}>
-                        Chỉnh sửa
-                    </Button>
-                );
-            },
-        },
+                    ),
+                },
+                {
+                    title: "",
+                    key: "edit",
+                    align: "center",
+                    render: (_, record) => {
+                        const editable = isEditing(record);
+                        return editable ? (
+                            <span>
+                                <Button
+                                    type="link"
+                                    onClick={(e) => { e.stopPropagation() }}
+                                    style={{ marginRight: 8 }}
+                                >
+                                    Lưu
+                                </Button>
+                                <Popconfirm title="Hủy chỉnh sửa?" onConfirm={(e) => { e.stopPropagation(); cancel() }} onCancel={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation() }}>
+                                    <Button type="link">Hủy</Button>
+                                </Popconfirm>
+                            </span>
+                        ) : (
+                            <Button type="link" disabled={editingKey !== ""} onClick={(e) => { e.stopPropagation(); edit(record) }}>
+                                Chỉnh sửa
+                            </Button>
+                        );
+                    },
+                },
+            ]
+            : []),
     ];
     const mergedColumns = columns.map((col) => {
         if (!col.editable) {
@@ -564,7 +606,26 @@ const Admin = () => {
     useEffect(() => {
         fetchData();
     }, []);
+    useEffect(() => {
+        if (modalTitleId) {
+            // Lọc dữ liệu từ allData theo modalTitleId
+            const details = allData.filter(item => item.QuyTrinhId === modalTitleId);
 
+            // Nhóm dữ liệu theo QuyTrinhVersionId (chỉ lấy dòng đầu tiên của mỗi phiên bản)
+            const uniqueVersionsMap = new Map();
+            details.forEach(item => {
+                if (!uniqueVersionsMap.has(item.QuyTrinhVersionId)) {
+                    uniqueVersionsMap.set(item.QuyTrinhVersionId, item);
+                }
+            });
+
+            const uniqueVersions = Array.from(uniqueVersionsMap.values());
+            // Sắp xếp theo phiên bản giảm dần
+            uniqueVersions.sort((a, b) => b.PhienBan - a.PhienBan);
+
+            setModalData(uniqueVersions);
+        }
+    }, [allData]);
     const getLatestVersions = (list) => {
         const grouped = {};
 
@@ -711,7 +772,6 @@ const Admin = () => {
             dataIndex: 'FilePDF',
             key: 'FilePDF',
             align: "center",
-            editable: true,
             render: (text, record) => {
                 if (record.PhienBan === null) {
                     return <span>Chưa có phiên bản</span>;
@@ -736,6 +796,21 @@ const Admin = () => {
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
         {
+            title: 'Comment',
+            dataIndex: 'Comment',
+            key: 'Comment',
+            width: "30%",
+            editable: true,
+            render: (text) =>
+                text && text.length > 100 ? (
+                    <Tooltip title={text}>
+                        <span>{text.slice(0, 100)}...</span>
+                    </Tooltip>
+                ) : (
+                    text
+                ),
+        },
+        {
             title: 'Chi Tiết',
             key: 'action',
             align: "center",
@@ -744,54 +819,58 @@ const Admin = () => {
                     type="primary"
                     onClick={(e) => { e.stopPropagation(); handleViewStatus(record); }}
                 >
-                    Xem tất cả
+                    Xem
                 </Button>
             ),
         },
-        {
-            title: '',
-            key: 'delete',
-            align: "center",
-            render: (text, record) => (
-                <Popconfirm
-                    title="Bạn có chắc chắn muốn xóa phiên bản này?"
-                    onConfirm={(e) => { e.stopPropagation(); handleDeleteVersion(record.QuyTrinhVersionId) }}
-                    onCancel={(e) => e.stopPropagation()}
-                    okText="Xóa"
-                    cancelText="Hủy"
-                >
-                    <Button type="primary" danger onClick={(e) => e.stopPropagation()}>
-                        Xóa
-                    </Button>
-                </Popconfirm>
-            ),
-        },
-        {
-            title: "",
-            key: "edit",
-            align: "center",
-            render: (_, record) => {
-                const editable = isEditing(record);
-                return editable ? (
-                    <span>
-                        <Button
-                            type="link"
-                            onClick={(e) => { e.stopPropagation() }}
-                            style={{ marginRight: 8 }}
+        ...(role === "admin"
+            ? [
+                {
+                    title: '',
+                    key: 'delete',
+                    align: "center",
+                    render: (text, record) => (
+                        <Popconfirm
+                            title="Bạn có chắc chắn muốn xóa phiên bản này?"
+                            onConfirm={(e) => { e.stopPropagation(); handleDeleteVersion(record.QuyTrinhVersionId) }}
+                            onCancel={(e) => e.stopPropagation()}
+                            okText="Xóa"
+                            cancelText="Hủy"
                         >
-                            Lưu
-                        </Button>
-                        <Popconfirm title="Hủy chỉnh sửa?" onConfirm={(e) => { e.stopPropagation(); cancel() }} onCancel={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation() }}>
-                            <Button type="link">Hủy</Button>
+                            <Button type="primary" danger onClick={(e) => e.stopPropagation()}>
+                                Xóa
+                            </Button>
                         </Popconfirm>
-                    </span>
-                ) : (
-                    <Button type="link" disabled={editingKey !== ""} onClick={(e) => { e.stopPropagation(); edit(record) }}>
-                        Chỉnh sửa
-                    </Button>
-                );
-            },
-        },
+                    ),
+                },
+                {
+                    title: "",
+                    key: "edit",
+                    align: "center",
+                    render: (_, record) => {
+                        const editable = isEditing_(record);
+                        return editable ? (
+                            <span>
+                                <Button
+                                    type="link"
+                                    onClick={(e) => { e.stopPropagation() }}
+                                    style={{ marginRight: 8 }}
+                                >
+                                    Lưu
+                                </Button>
+                                <Popconfirm title="Hủy chỉnh sửa?" onConfirm={(e) => { e.stopPropagation(); cancel_() }} onCancel={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation() }}>
+                                    <Button type="link">Hủy</Button>
+                                </Popconfirm>
+                            </span>
+                        ) : (
+                            <Button type="link" disabled={editingKey_ !== ""} onClick={(e) => { e.stopPropagation(); edit_(record) }}>
+                                Chỉnh sửa
+                            </Button>
+                        );
+                    },
+                },
+            ]
+            : []),
     ];
     const mergedModalVersionColumns = modalVersionColumns.map((col) => {
         if (!col.editable) {
@@ -804,10 +883,11 @@ const Admin = () => {
                 inputType: "text",
                 dataIndex: col.dataIndex,
                 title: col.title,
-                editing: isEditing(record),
+                editing: isEditing_(record),
             }),
         };
     });
+    console.log(isEditing_)
     // Hàm mở Modal trạng thái (danh sách người dùng cho version được chọn)
     const handleViewStatus = (record) => {
         // Kiểm tra nếu BoPhanGui bị null hoặc undefined thì gán mảng rỗng []
@@ -883,11 +963,11 @@ const Admin = () => {
                                     <Table
                                         dataSource={data}
                                         columns={mergedColumns}
-                                        rowKey="VersionId"
+                                        rowKey="QuyTrinhId"
                                         scroll={{ y: 55 * 9 }}
                                         components={{
                                             body: {
-                                                // row: EditableRow,
+                                                row: EditableRow,
                                                 cell: EditableCell,
                                             },
                                         }}
@@ -925,17 +1005,32 @@ const Admin = () => {
                     width={1000}
                     style={{ backgroundColor: '#001529' }}
                 >
-                    <Table
-                        dataSource={modalData}
-                        columns={mergedModalVersionColumns}
-                        rowKey="VersionId"
-                        pagination={false}
-                        className={style.tableVersions}
-                        scroll={{ y: 55 * 9 }}
-                        onRow={(record) => ({
-                            onClick: () => { setModalVisible(false); handleViewPdf(record) }
-                        })}
-                    />
+                    <Form form={formEdit_} component={false}>
+                        <Table
+                            dataSource={modalData}
+                            columns={mergedModalVersionColumns}
+                            rowKey="VersionId"
+                            pagination={false}
+                            className={style.tableVersions}
+                            scroll={{ y: 55 * 9 }}
+                            components={{
+                                body: {
+                                    row: EditableRow,
+                                    cell: EditableCell,
+                                },
+                            }}
+                            onRow={(record) => ({
+                                onClick: (event) => {
+                                    if (editingKey_ === record.QuyTrinhVersionId) {
+                                        // Nếu đang edit thì không làm gì cả
+                                        event.stopPropagation();
+                                        return;
+                                    }
+                                    handleViewPdf(record);
+                                },
+                            })}
+                        />
+                    </Form>
                     {/* --- Modal Thêm Version --- */}
                     <Modal
                         title="Thêm Version Mới"
@@ -969,8 +1064,6 @@ const Admin = () => {
                             <Form.Item
                                 label="Bộ phận được phân phối"
                                 name="BoPhanIds"
-                                // getValueFromEvent={getValueFromEvent}
-                                // name="selectWithAllOption"
                                 rules={[{ required: true, message: 'Vui lòng chọn bộ phận!' }]}
                             >
                                 <Select
@@ -979,7 +1072,6 @@ const Admin = () => {
                                     options={boPhanOptions}
                                     // value={selectedBoPhan}
                                     allowClear
-                                // virtual={true}
                                 />
                             </Form.Item>
 
@@ -995,6 +1087,16 @@ const Admin = () => {
                                 >
                                     <Button icon={<UploadOutlined />}>Chọn File</Button>
                                 </Upload>
+                            </Form.Item>
+                            <Form.Item
+                                label="Nội dung chỉnh sửa"
+                                name="NoiDungChinhSua"
+                            // rules={[{ required: true, message: 'Vui lòng nhập phiên bản!' }]}
+                            >
+                                <Input.TextArea
+                                    rows={4}
+                                    placeholder="Nhập nội dung chỉnh sửa"
+                                />
                             </Form.Item>
                         </Form>
                     </Modal>

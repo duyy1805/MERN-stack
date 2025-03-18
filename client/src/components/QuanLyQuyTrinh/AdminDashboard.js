@@ -10,6 +10,7 @@ import Admin from "./Admin";
 import Admin_SP from "./Admin_SP";
 import ChartDasdboard from "./ChartDasdboard";
 import { Link, useHistory } from "react-router-dom";
+import Admin_SP_Ikea from "./Admin_SP_Ikea";
 
 const { Header, Sider, Content } = Layout;
 
@@ -40,7 +41,8 @@ const AdminDashboard = () => {
     const menuItems = [
         { key: "ChartDasdboard", icon: <UserOutlined />, label: "ChartDasdboard" },
         { key: "dashboard", icon: <DashboardOutlined />, label: "Quy trình" },
-        { key: "documents", icon: <FileOutlined />, label: "Tài liệu sản phẩm" },
+        { key: "documents", icon: <FileOutlined />, label: "Sản phẩm DEK" },
+        { key: "documents_Ikea", icon: <FileOutlined />, label: "Sản phẩm IKEA" },
     ];
 
     const renderContent = () => {
@@ -51,6 +53,8 @@ const AdminDashboard = () => {
                 return <ChartDasdboard />;
             case "documents":
                 return <Admin_SP />;
+            case "documents_Ikea":
+                return <Admin_SP_Ikea />;
             default:
                 return <h2>Welcome to Admin Panel</h2>;
         }

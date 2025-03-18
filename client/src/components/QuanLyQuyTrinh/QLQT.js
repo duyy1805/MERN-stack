@@ -136,6 +136,7 @@ const QLQT = () => {
         label: bp
     }));
     const LPTFilters = createFilters('BoPhanBanHanh');
+    const LPTFilters_TenQuyTrinh = createFilters('TenQuyTrinh');
     const columns = [
         {
             title: 'Mã Quy Trình',
@@ -147,6 +148,9 @@ const QLQT = () => {
             dataIndex: 'TenQuyTrinh',
             key: 'TenQuyTrinh',
             width: '30%',
+            filters: LPTFilters_TenQuyTrinh,
+            filterSearch: true,
+            onFilter: (value, record) => record.TenQuyTrinh.includes(value),
             render: (text) =>
                 text && text.length > 50 ? (
                     <Tooltip title={text}>
@@ -291,6 +295,11 @@ const QLQT = () => {
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
         {
+            title: 'Comment',
+            dataIndex: 'Comment',
+            key: 'Comment',
+        },
+        {
             title: 'Ngày hiệu lực',
             dataIndex: 'NgayHieuLuc',
             key: 'NgayHieuLuc',
@@ -418,7 +427,7 @@ const QLQT = () => {
                         className={style.tableVersions}
                         scroll={{ y: 55 * 9 }}
                         pagination={false}
-                        onRow={(record) => ({ onClick: () => { setModalVisible(false); handleViewPdf(record); } })}
+                        onRow={(record) => ({ onClick: () => handleViewPdf(record) })}
                         rowClassName={(record) => record.TrangThai === 'Chưa xem' ? style.notViewed : ''}
                     />
                     {/* Modal thêm phiên bản */}

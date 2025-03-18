@@ -9,7 +9,7 @@ import { Button, Space } from 'antd';
 const ViewerPDF = ({ fileUrl, onClose, onComment }) => {
     const defaultLayoutPluginInstance = defaultLayoutPlugin();
     return (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#fff', zIndex: 1000 }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#fff', zIndex: 1050 }}>
             <div style={{ position: 'absolute', top: 4, right: 220, zIndex: 1100 }}>
                 <Space>
                     <Button onClick={onComment}>Comment</Button>
