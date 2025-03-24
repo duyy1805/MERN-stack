@@ -32,17 +32,8 @@ const QLTL_Ikea = () => {
     const [modalTitle, setModalTitle] = useState(''); // tên sản phẩm được chọn
     const [modalTaiLieuTitle, setModalTaiLieuTitle] = useState('');
 
-    const [modalTitleId, setModalTitleId] = useState(''); // id sản phẩm được chọn
-
-    const [form] = Form.useForm();
-    const [processForm] = Form.useForm();
-    const [addProcessModalVisible, setAddProcessModalVisible] = useState(false);
-    const [addVersionModalVisible, setAddVersionModalVisible] = useState(false);
-    const [file, setFile] = useState(null);
     const [pdfVisible, setPdfVisible] = useState(false);
     const [pdfUrl, setPdfUrl] = useState('');
-    const [selectedProcess, setSelectedProcess] = useState(null);
-    const [selectedProcess_, setSelectedProcess_] = useState(null);
     // Modal nhận xét khi xem tài liệu
     const [isCommentModalVisible, setIsCommentModalVisible] = useState(false);
     const [currentRecord, setCurrentRecord] = useState(null);
@@ -61,12 +52,11 @@ const QLTL_Ikea = () => {
             const userId = localStorage.getItem('userId');
             await axios.post(`${apiConfig.API_BASE_URL}/B8/markAsViewedTL`, {
                 NguoiDungId: parseInt(userId),
-                TaiLieuId: currentRecord.VersionId,
+                TaiLieuSanPhamId: currentRecord.TaiLieuId,
                 NhanXet: comment
             });
             messageApi.open({ type: 'success', content: `Đã đánh dấu tài liệu là đã xem và ghi nhận nhận xét!` });
         } catch (error) {
-            message.error("Có lỗi xảy ra khi đánh dấu đã xem: " + error.message);
             messageApi.open({ type: 'error', content: "Có lỗi xảy ra khi đánh dấu đã xem" });
         } finally {
             setIsCommentModalVisible(false);
@@ -103,9 +93,11 @@ const QLTL_Ikea = () => {
 
 
     const handleViewPdf = async (record) => {
+        setModalVisible(false);
+        setModalVersionVisible(false);
         setCurrentRecord(record);
         console.log(record)
-        if (record.VersionId === null) {
+        if (record.TaiLieuId === null) {
             messageApi.open({
                 type: 'error',
                 content: `Phiên bản không tồn tại!`,
@@ -132,13 +124,6 @@ const QLTL_Ikea = () => {
             }
         }
     };
-
-    const optionsSelect = Array.from(
-        new Set(data.map((item) => item.TenSanPham).filter(Boolean))
-    ).map((uniqueName) => ({
-        label: uniqueName,
-        value: uniqueName,
-    }));
 
     const createFilters = (key) => {
         const uniqueValues = [...new Set(data.map((item) => item[key]))];
@@ -423,21 +408,6 @@ const QLTL_Ikea = () => {
         },
     ];
 
-    // Hàm mở Modal trạng thái (danh sách người dùng cho version được chọn)
-    const handleViewStatus = (record) => {
-        // Kiểm tra nếu BoPhanGui bị null hoặc undefined thì gán mảng rỗng []
-        const boPhanGuiArray = record.BoPhanGui ? record.BoPhanGui.split(',') : [];
-
-        // Lọc dữ liệu dựa trên VersionId và BoPhan có trong BoPhanGui
-        const usersData = allData.filter(item =>
-            item.TaiLieuId === record.TaiLieuId &&
-            // (boPhanGuiArray.length === 0 || boPhanGuiArray.includes(item.BoPhan)) && 
-            item.ChucVu !== "admin"
-        );
-
-        setStatusData(usersData);
-        setStatusModalVisible(true);
-    };
     const homNay = dayjs();
 
     // Lọc tài liệu mới (trong 30 ngày gần đây)
@@ -507,6 +477,7 @@ const QLTL_Ikea = () => {
                                 <Table
                                     columns={columns}
                                     dataSource={groupedData}
+                                    scroll={{ y: 55 * 9 }}
                                     onRow={(record) => ({
                                         onClick: (event) => {
                                             setModalTitle(record.TenSanPham)
@@ -560,7 +531,7 @@ const QLTL_Ikea = () => {
                     <Table
                         dataSource={modalVersionData}
                         columns={modalVersionColumns}
-                        rowKey="VersionId"
+                        rowKey="TaiLieuId"
                         pagination={false}
                         className={style.tableVersions}
                         scroll={{ y: 55 * 9 }}

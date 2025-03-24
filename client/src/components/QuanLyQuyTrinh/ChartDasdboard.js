@@ -92,6 +92,8 @@ const ChartDasdboard = () => {
     const [lineChartData, setLineChartData] = useState([]);
     const [chartDataTL, setChartDataTL] = useState([]);
     const [lineChartDataTL, setLineChartDataTL] = useState([]);
+    const [chartDataTL_IKEA, setChartDataTL_IKEA] = useState([]);
+    const [lineChartDataTL_IKEA, setLineChartDataTL_IKEA] = useState([]);
     // Modal nhận xét khi xem tài liệu
     const [isCommentModalVisible, setIsCommentModalVisible] = useState(false);
     const [currentRecord, setCurrentRecord] = useState(null);
@@ -142,14 +144,13 @@ const ChartDasdboard = () => {
             const res = await axios.get(`${apiConfig.API_BASE_URL}/B8/sanphamall`);
             const list = res.data;
             setAllDataTL(list);
-            console.log(list)
             setDataTL(getLatestVersionsTL(list));
 
             const names = Array.from(
                 new Set(list.map((item) => item.BoPhanBanHanh).filter(Boolean))
             );
-            const groupedData = getLatestVersionsTL(list).reduce((acc, item) => {
-                const boPhan = item.TenSanPham || "Không xác định";
+            const groupedData = getLatestVersionsTL_(list).filter(item => item.KhachHang === "DEK").reduce((acc, item) => {
+                const boPhan = item.DongHang || "Không xác định";
                 if (!acc[boPhan]) {
                     acc[boPhan] = { name: boPhan, value: 0 };
                 }
@@ -158,8 +159,18 @@ const ChartDasdboard = () => {
             }, {});
             const formattedData = Object.values(groupedData);
 
-            console.log(groupedData)
+            console.log(formattedData)
             setChartDataTL(formattedData);
+            const groupedData_ = getLatestVersionsTL_(list).filter(item => item.KhachHang === "IKEA").reduce((acc, item) => {
+                const boPhan = item.DongHang || "Không xác định";
+                if (!acc[boPhan]) {
+                    acc[boPhan] = { name: boPhan, value: 0 };
+                }
+                acc[boPhan].value += 1;
+                return acc;
+            }, {});
+            const formattedData_ = Object.values(groupedData_);
+            setChartDataTL_IKEA(formattedData_);
             setAllProcessNames(names);
         } catch (error) {
             messageApi.open({
@@ -221,8 +232,10 @@ const ChartDasdboard = () => {
             // Tạo Set để kiểm tra các QuyTrinhVersionId đã đếm theo từng ngày
             const countedSet = new Set();
             const processCountByDay = {};
+            const countedSet_ = new Set();
+            const processCountByDay_ = {};
 
-            allDataTL.forEach(record => {
+            allDataTL.filter(item => item.KhachHang === "DEK").forEach(record => {
                 if (!record.NgayTao || !record.TaiLieuId) return;
                 const ngayTao = dayjs(record.NgayTao).format("YYYY-MM-DD");
                 const uniqueKey = `${record.TaiLieuId}`;
@@ -240,6 +253,25 @@ const ChartDasdboard = () => {
             }));
 
             setLineChartDataTL(formattedLineChartData);
+
+            allDataTL.filter(item => item.KhachHang === "IKEA").forEach(record => {
+                if (!record.NgayTao || !record.TaiLieuId) return;
+                const ngayTao = dayjs(record.NgayTao).format("YYYY-MM-DD");
+                const uniqueKey = `${record.TaiLieuId}`;
+
+                if (last7Days.includes(ngayTao) && !countedSet_.has(uniqueKey)) {
+                    countedSet_.add(uniqueKey);
+                    processCountByDay_[ngayTao] = (processCountByDay_[ngayTao] || 0) + 1;
+                }
+            });
+
+            // Chuyển đổi dữ liệu thành mảng để hiển thị trên LineChart
+            const formattedLineChartData_ = last7Days.map(date => ({
+                date,
+                count: processCountByDay_[date] || 0
+            }));
+
+            setLineChartDataTL_IKEA(formattedLineChartData_);
         }
     }, [allDataTL]);
     useEffect(() => {
@@ -252,7 +284,6 @@ const ChartDasdboard = () => {
         const grouped = {};
         list.forEach(item => {
             const key = item.QuyTrinhId;
-            // So sánh phiên bản (giả sử PhienBan là kiểu số)
             if (!grouped[key] || item.PhienBan > grouped[key].PhienBan) {
                 grouped[key] = item;
             }
@@ -263,8 +294,21 @@ const ChartDasdboard = () => {
     const getLatestVersionsTL = (list) => {
         const grouped = {};
         list.forEach(item => {
-            const key = `${item.MaSanPham}-${item.TenTaiLieu}`;
-            const version = parseFloat(item.PhienBan); // Chuyển đổi thành số
+            const key = `${item.MaCC}-${item.TenTaiLieu}-${item.ItemCode}`;
+            const version = parseFloat(item.PhienBan);
+
+            if (!grouped[key] || version > parseFloat(grouped[key].PhienBan)) {
+                grouped[key] = item;
+            }
+        });
+        // Sắp xếp theo thứ tự giảm dần của PhienBan
+        return Object.values(grouped).sort((a, b) => b.NgayTao - a.NgayTao);
+    };
+    const getLatestVersionsTL_ = (list) => {
+        const grouped = {};
+        list.forEach(item => {
+            const key = `${item.MaCC}`;
+            const version = parseFloat(item.PhienBan);
 
             if (!grouped[key] || version > parseFloat(grouped[key].PhienBan)) {
                 grouped[key] = item;
@@ -282,6 +326,7 @@ const ChartDasdboard = () => {
     const soQuyTrinhKhacNhau = uniqueQuyTrinh.size;
     const totalVersions = lineChartData.reduce((sum, item) => sum + item.count, 0);
     const totalVersionsTL = lineChartDataTL.reduce((sum, item) => sum + item.count, 0);
+    const totalVersionsTL_IKEA = lineChartDataTL_IKEA.reduce((sum, item) => sum + item.count, 0);
     return (
         <Layout className={style.admin}>
             <Content style={{ padding: 10, backgroundColor: '#162f48' }}>
@@ -338,7 +383,7 @@ const ChartDasdboard = () => {
                         </Card>
                     </Col>
                     <Col xs={24} sm={12}>
-                        <Card title="Thống kê sản phẩm" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
+                        <Card title="Thống kê sản phẩm DEK" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
                             <ResponsiveContainer width="100%" height={250}>
                                 <PieChart>
                                     <Pie
@@ -366,7 +411,7 @@ const ChartDasdboard = () => {
                         </Card>
                     </Col>
                     <Col xs={24} sm={8}>
-                        <Card title={`Số lượng tài liệu mới: ${totalVersionsTL}`} headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
+                        <Card title={`Số lượng phiên bản mới: ${totalVersionsTL}`} headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
                             <ResponsiveContainer width="100%" height={250}>
                                 <LineChart data={lineChartDataTL}>
                                     <CartesianGrid strokeDasharray="3 3" />
@@ -384,7 +429,58 @@ const ChartDasdboard = () => {
                     <Col xs={24} sm={4}>
                         <Card title="Tổng số lượng tài liệu" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
                             <Typography.Title level={2} style={{ color: "#fff", textAlign: "center" }}>
-                                {dataTL.length}
+                                {dataTL.filter(item => item.KhachHang === "DEK").length}
+                            </Typography.Title>
+                        </Card>
+                    </Col>
+                    <Col xs={24} sm={12}>
+                        <Card title="Thống kê sản phẩm IKEA" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
+                            <ResponsiveContainer width="100%" height={250}>
+                                <PieChart>
+                                    <Pie
+                                        data={chartDataTL_IKEA}
+                                        cx={140}
+                                        cy={120}
+                                        innerRadius={60}
+                                        outerRadius={80}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                        label={({ value }) => value}
+                                    >
+                                        {chartDataTL_IKEA.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <RechartsTooltip />
+                                    <Legend layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{
+                                        maxHeight: 150, overflowY: "auto", scrollbarWidth: "thin",
+                                        scrollbarColor: "#FFFFFF #001529", width: 200, overflow: 'hidden',
+                                        textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                                    }} />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </Card>
+                    </Col>
+                    <Col xs={24} sm={8}>
+                        <Card title={`Số lượng phiên bản mới: ${totalVersionsTL_IKEA}`} headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
+                            <ResponsiveContainer width="100%" height={250}>
+                                <LineChart data={lineChartDataTL_IKEA}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis
+                                        dataKey="date"
+                                        tickFormatter={(date) => dayjs(date).format("DD/MM")}
+                                    />
+                                    <YAxis />
+                                    <RechartsTooltip />
+                                    <Line type="monotone" dataKey="count" stroke="#8884d8" strokeWidth={2} />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </Card>
+                    </Col>
+                    <Col xs={24} sm={4}>
+                        <Card title="Tổng số lượng tài liệu" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
+                            <Typography.Title level={2} style={{ color: "#fff", textAlign: "center" }}>
+                                {dataTL.filter(item => item.KhachHang === "IKEA" && item.TenTaiLieu !== null).length}
                             </Typography.Title>
                         </Card>
                     </Col>

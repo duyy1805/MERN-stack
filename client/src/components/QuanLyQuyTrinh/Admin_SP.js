@@ -191,6 +191,8 @@ const Admin_SP = () => {
 
     // Khi người dùng click vào 1 hàng, mở PDF ngay lập tức
     const handleViewPdf = async (record) => {
+        setModalVisible(false);
+        setModalVersionVisible(false);
         setCurrentRecord(record);
         if (record.PhienBan === null) {
             messageApi.open({
@@ -215,13 +217,18 @@ const Admin_SP = () => {
     const handleAddProcess = async () => {
         try {
             const values = await processForm.validateFields();
+            let TheLoai = "NULL"; // Dùng let thay vì const
+
+            if (values.TheLoai && values.TheLoai.trim() !== "") {
+                TheLoai = values.TheLoai;
+            }
             const requestData = {
                 KhachHang: values.KhachHang,
                 DongHang: values.DongHang,
                 MaCC: values.MaCC,
                 // MaModel: values.MaModel,
                 // MaSanPham: values.MaSanPham,
-                TheLoai: values.TheLoai,
+                TheLoai: TheLoai,
                 TenSanPham: values.TenSanPham,
                 BoPhanIds: values.BoPhanIds // Dữ liệu mảng
             };
@@ -638,6 +645,15 @@ const Admin_SP = () => {
             title: 'Comment',
             dataIndex: 'Comment',
             key: 'Comment',
+            width: "20%",
+            render: (text) =>
+                text && text.length > 50 ? (
+                    <Tooltip title={text}>
+                        <span>{text.slice(0, 50)}...</span>
+                    </Tooltip>
+                ) : (
+                    text
+                ),
         },
         {
             title: 'Chi Tiết',
@@ -660,11 +676,8 @@ const Admin_SP = () => {
                     align: "center",
                     render: (text, record) => (
                         <Popconfirm
-                            title="Bạn có chắc chắn muốn xóa sản phẩm này?"
-                            onConfirm={(e) => {
-                                e.stopPropagation();
-                                handleDeleteQuyTrinh(record.SanPhamId);
-                            }}
+                            title="Bạn có chắc chắn muốn xóa tài liệu này?"
+                            onConfirm={(e) => { e.stopPropagation(); handleDeleteVersion(record.TaiLieuId) }}
                             onCancel={(e) => e.stopPropagation()}
                             okText="Xóa"
                             cancelText="Hủy"
@@ -851,6 +864,15 @@ const Admin_SP = () => {
             title: 'Comment',
             dataIndex: 'Comment',
             key: 'Comment',
+            width: "20%",
+            render: (text) =>
+                text && text.length > 50 ? (
+                    <Tooltip title={text}>
+                        <span>{text.slice(0, 50)}...</span>
+                    </Tooltip>
+                ) : (
+                    text
+                ),
         },
         {
             title: 'Chi Tiết',
@@ -873,11 +895,8 @@ const Admin_SP = () => {
                     align: "center",
                     render: (text, record) => (
                         <Popconfirm
-                            title="Bạn có chắc chắn muốn xóa sản phẩm này?"
-                            onConfirm={(e) => {
-                                e.stopPropagation();
-                                handleDeleteQuyTrinh(record.SanPhamId);
-                            }}
+                            title="Bạn có chắc chắn muốn xóa tài liệu này?"
+                            onConfirm={(e) => { e.stopPropagation(); handleDeleteVersion(record.TaiLieuId) }}
                             onCancel={(e) => e.stopPropagation()}
                             okText="Xóa"
                             cancelText="Hủy"
@@ -901,7 +920,7 @@ const Admin_SP = () => {
         const usersData = allData.filter(item =>
             item.TaiLieuId === record.TaiLieuId &&
             // (boPhanGuiArray.length === 0 || boPhanGuiArray.includes(item.BoPhan)) && 
-            item.ChucVu !== "admin" // Loại bỏ admin
+            !item.ChucVu.toLowerCase().includes("admin") // Loại bỏ admin
         );
 
         setStatusData(usersData);

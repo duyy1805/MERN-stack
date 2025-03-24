@@ -840,7 +840,7 @@ const Admin_SP = () => {
         const usersData = allData.filter(item =>
             item.TaiLieuId === record.TaiLieuId &&
             // (boPhanGuiArray.length === 0 || boPhanGuiArray.includes(item.BoPhan)) && 
-            item.ChucVu !== "admin" // Loại bỏ admin
+            !item.ChucVu.toLowerCase().includes("admin") // Loại bỏ admin
         );
 
         setStatusData(usersData);
@@ -1260,6 +1260,7 @@ const Admin_SP = () => {
                         fileUrl={pdfUrl}
                         onClose={() => { setPdfVisible(false) }}
                         onComment={handleOpenCommentModal}
+                        visible={pdfVisible}
                     />
                 )}
             </Content>

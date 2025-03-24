@@ -1,0 +1,21 @@
+.logo {
+    background-color: #34495e;
+    border-radius: 10px;
+    margin: 10px;
+    width: 90%;
+    height: 50px;
+}
+
+.centeredCard {
+    text-align: center;
+    margin: 10px 0;
+    box-shadow: 0 20px 27px 0 rgba(0, 0, 0, 0.1);
+}
+
+.centeredCard :global(.ant-card-body) {
+    padding: 0;
+}
+
+.centeredCard :global(.ant-card-head) {
+    min-height: 24px;
+}

@@ -41,26 +41,26 @@ const HomeLink = styled(Link)`
 `;
 
 const NotFound = () => {
-    return (
-        <NotFoundContainer>
-            <div className="container">
-                <div className="row">
-                    <div className="col-sm-12">
-                        <div className="col-sm-10 col-sm-offset-1 text-center">
-                            <Background404>
-                                <Title>404</Title>
-                            </Background404>
-                            <div>
-                                <Message>Look like you're lost</Message>
-                                <p>The page you are looking for is not available!</p>
-                                <HomeLink to="/">Go to Home</HomeLink>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+  return (
+    <NotFoundContainer>
+      <div className="container">
+        <div className="row">
+          <div className="col-sm-12">
+            <div className="col-sm-10 col-sm-offset-1 text-center">
+              <Background404>
+                <Title>404</Title>
+              </Background404>
+              <div>
+                <Message>Look like you're lost</Message>
+                <p>The page you are looking for is not available!</p>
+                <HomeLink to="/">Go to Home</HomeLink>
+              </div>
             </div>
-        </NotFoundContainer>
-    );
+          </div>
+        </div>
+      </div>
+    </NotFoundContainer>
+  );
 };
 
 export default NotFound;

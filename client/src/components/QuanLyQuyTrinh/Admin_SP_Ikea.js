@@ -191,6 +191,8 @@ const Admin_SP_Ikea = () => {
 
     // Khi người dùng click vào 1 hàng, mở PDF ngay lập tức
     const handleViewPdf = async (record) => {
+        setModalVisible(false);
+        setModalVersionVisible(false);
         setCurrentRecord(record);
         if (record.PhienBan === null) {
             messageApi.open({
@@ -605,6 +607,15 @@ const Admin_SP_Ikea = () => {
             title: 'Comment',
             dataIndex: 'Comment',
             key: 'Comment',
+            width: "20%",
+            render: (text) =>
+                text && text.length > 50 ? (
+                    <Tooltip title={text}>
+                        <span>{text.slice(0, 50)}...</span>
+                    </Tooltip>
+                ) : (
+                    text
+                ),
         },
         {
             title: 'Chi Tiết',
@@ -627,11 +638,8 @@ const Admin_SP_Ikea = () => {
                     align: "center",
                     render: (text, record) => (
                         <Popconfirm
-                            title="Bạn có chắc chắn muốn xóa sản phẩm này?"
-                            onConfirm={(e) => {
-                                e.stopPropagation();
-                                handleDeleteQuyTrinh(record.SanPhamId);
-                            }}
+                            title="Bạn có chắc chắn muốn xóa tài liệu này?"
+                            onConfirm={(e) => { e.stopPropagation(); handleDeleteVersion(record.TaiLieuId) }}
                             onCancel={(e) => e.stopPropagation()}
                             okText="Xóa"
                             cancelText="Hủy"
@@ -751,32 +759,6 @@ const Admin_SP_Ikea = () => {
                 setData(getLatestVersions(allData));
         }
     };
-    // Hàm xử lý xác nhận
-    const confirmField = async (record, field) => {
-        const HoTen = localStorage.getItem('HoTen');
-        const userId = localStorage.getItem('userId');
-        console.log(`Xác nhận ${field} cho phiên bản ${record.VersionId} của ${userId}`);
-        try {
-            await axios.post(`${apiConfig.API_BASE_URL}/B8/confirm`, {
-                VersionId: record.VersionId,
-                field, // Trường cần cập nhật
-                HoTen,
-                userId,
-            });
-            message.success(`Xác nhận ${field} thành công!`);
-            // Cập nhật lại state
-            setAllData(prevData =>
-                prevData.map(item =>
-                    item.VersionId === record.VersionId ? { ...item, [field]: HoTen } : item
-                )
-            );
-            setData(getLatestVersions(allData.map(item =>
-                item.VersionId === record.VersionId ? { ...item, [field]: HoTen } : item
-            )));
-        } catch (error) {
-            message.error(error.response?.data?.message || `Lỗi xác nhận ${field}`);
-        }
-    };
 
     // ----- Các cột cho Modal "Xem chi tiết" chỉ hiển thị thông tin Version -----
     const modalVersionColumns = [
@@ -811,6 +793,15 @@ const Admin_SP_Ikea = () => {
             title: 'Comment',
             dataIndex: 'Comment',
             key: 'Comment',
+            width: "20%",
+            render: (text) =>
+                text && text.length > 50 ? (
+                    <Tooltip title={text}>
+                        <span>{text.slice(0, 50)}...</span>
+                    </Tooltip>
+                ) : (
+                    text
+                ),
         },
         {
             title: 'Chi Tiết',
@@ -833,11 +824,8 @@ const Admin_SP_Ikea = () => {
                     align: "center",
                     render: (text, record) => (
                         <Popconfirm
-                            title="Bạn có chắc chắn muốn xóa sản phẩm này?"
-                            onConfirm={(e) => {
-                                e.stopPropagation();
-                                handleDeleteQuyTrinh(record.SanPhamId);
-                            }}
+                            title="Bạn có chắc chắn muốn xóa tài liệu này?"
+                            onConfirm={(e) => { e.stopPropagation(); handleDeleteVersion(record.TaiLieuId) }}
                             onCancel={(e) => e.stopPropagation()}
                             okText="Xóa"
                             cancelText="Hủy"
@@ -861,7 +849,7 @@ const Admin_SP_Ikea = () => {
         const usersData = allData.filter(item =>
             item.TaiLieuId === record.TaiLieuId &&
             // (boPhanGuiArray.length === 0 || boPhanGuiArray.includes(item.BoPhan)) && 
-            item.ChucVu !== "admin" // Loại bỏ admin
+            !item.ChucVu.toLowerCase().includes("admin") // Loại bỏ admin
         );
 
         setStatusData(usersData);

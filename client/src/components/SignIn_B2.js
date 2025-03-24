@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Form, Input, Button, Typography, Row, Col, Switch, Layout, Radio, message, Image } from "antd";
+import { Form, Input, Button, Typography, Row, Col, Switch, Layout, message, Image } from "antd";
 import { Link, useHistory } from "react-router-dom";
 import "./Style.css";
 import axios from "axios";
@@ -12,7 +12,6 @@ const { Content } = Layout;
 const SignIn = () => {
     const [messageApi, contextHolder] = message.useMessage();
     const history = useHistory();
-    const [loginType, setLoginType] = useState("A"); // "A" hoặc "B"
 
     const getDeviceId = () => {
         let deviceId = localStorage.getItem('deviceId');

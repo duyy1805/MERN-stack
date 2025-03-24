@@ -237,7 +237,6 @@ const Admin = () => {
             });
             messageApi.open({ type: 'success', content: `Đã đánh dấu tài liệu là đã xem và ghi nhận nhận xét!` });
         } catch (error) {
-            message.error("Có lỗi xảy ra khi đánh dấu đã xem: " + error.message);
             messageApi.open({ type: 'error', content: "Có lỗi xảy ra khi đánh dấu đã xem" });
         } finally {
             setIsCommentModalVisible(false);
@@ -285,6 +284,7 @@ const Admin = () => {
 
     // Khi người dùng click vào 1 hàng, mở PDF ngay lập tức
     const handleViewPdf = async (record) => {
+        setModalVisible(false);
         setCurrentRecord(record);
         if (record.PhienBan === null) {
             messageApi.open({
@@ -663,15 +663,6 @@ const Admin = () => {
         });
     };
 
-
-
-    // Hàm tìm kiếm theo tên quy trình (lọc trên dữ liệu phiên bản mới nhất)
-    const onSearch = (value) => {
-        const filtered = getLatestVersions(allData).filter(item =>
-            item.TenQuyTrinh && item.TenQuyTrinh.toLowerCase().includes(value.toLowerCase())
-        );
-        setData(filtered);
-    };
     const handleViewDetails = (QuyTrinhId, TenQuyTrinh) => {
         // Lấy tất cả các dòng có cùng QuyTrinhId được chọn
         const details = allData.filter(item => item.QuyTrinhId === QuyTrinhId);
@@ -739,31 +730,7 @@ const Admin = () => {
                 setData(getLatestVersions(allData));
         }
     };
-    // Hàm xử lý xác nhận
-    const confirmField = async (record, field) => {
-        const HoTen = localStorage.getItem('HoTen');
-        const userId = localStorage.getItem('userId');
-        try {
-            await axios.post(`${apiConfig.API_BASE_URL}/B8/confirm`, {
-                VersionId: record.VersionId,
-                field, // Trường cần cập nhật
-                HoTen,
-                userId,
-            });
-            message.success(`Xác nhận ${field} thành công!`);
-            // Cập nhật lại state
-            setAllData(prevData =>
-                prevData.map(item =>
-                    item.VersionId === record.VersionId ? { ...item, [field]: HoTen } : item
-                )
-            );
-            setData(getLatestVersions(allData.map(item =>
-                item.VersionId === record.VersionId ? { ...item, [field]: HoTen } : item
-            )));
-        } catch (error) {
-            message.error(error.response?.data?.message || `Lỗi xác nhận ${field}`);
-        }
-    };
+
 
     // ----- Các cột cho Modal "Xem chi tiết" chỉ hiển thị thông tin Version -----
     const modalVersionColumns = [
@@ -897,7 +864,7 @@ const Admin = () => {
         const usersData = allData.filter(item =>
             item.QuyTrinhVersionId === record.QuyTrinhVersionId &&
             // (boPhanGuiArray.length === 0 || boPhanGuiArray.includes(item.BoPhan)) && 
-            item.ChucVu !== "admin" // Loại bỏ admin
+            !item.ChucVu.toLowerCase().includes("admin") // Loại bỏ admin
         );
 
         setStatusData(usersData);
@@ -911,8 +878,8 @@ const Admin = () => {
         const ngayTao = dayjs(record.NgayTao);
         return homNay.diff(ngayTao, "day") < 30;
     });
-    const uniqueQuyTrinh = new Set(taiLieuMoi.map(record => `${record.TenQuyTrinh}_${record.QuyTrinhVersionId}`));
-    const soQuyTrinhKhacNhau = uniqueQuyTrinh.size;
+    // const uniqueQuyTrinh = new Set(taiLieuMoi.map(record => `${record.TenQuyTrinh}_${record.QuyTrinhVersionId}`));
+    // const soQuyTrinhKhacNhau = uniqueQuyTrinh.size;
 
     return (
         <Layout className={style.admin}>

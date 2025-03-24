@@ -101,14 +101,14 @@ const QLTL = () => {
     const handleConfirmComment = async () => {
         try {
             const userId = localStorage.getItem('userId');
+            console.log(currentRecord)
             await axios.post(`${apiConfig.API_BASE_URL}/B8/markAsViewedTL`, {
                 NguoiDungId: parseInt(userId),
-                TaiLieuId: currentRecord.VersionId,
+                TaiLieuSanPhamId: currentRecord.TaiLieuId,
                 NhanXet: comment
             });
             messageApi.open({ type: 'success', content: `Đã đánh dấu tài liệu là đã xem và ghi nhận nhận xét!` });
         } catch (error) {
-            message.error("Có lỗi xảy ra khi đánh dấu đã xem: " + error.message);
             messageApi.open({ type: 'error', content: "Có lỗi xảy ra khi đánh dấu đã xem" });
         } finally {
             setIsCommentModalVisible(false);
@@ -145,9 +145,11 @@ const QLTL = () => {
 
 
     const handleViewPdf = async (record) => {
+        setModalVisible(false);
+        setModalVersionVisible(false);
         setCurrentRecord(record);
-        console.log(record)
-        if (record.VersionId === null) {
+        console.log(record.TaiLieuId)
+        if (record.TaiLieuId === null) {
             messageApi.open({
                 type: 'error',
                 content: `Phiên bản không tồn tại!`,
@@ -459,6 +461,19 @@ const QLTL = () => {
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
         {
+            title: 'NhanXet',
+            dataIndex: 'NhanXet',
+            key: 'NhanXet',
+            render: (text) =>
+                text && text.length > 50 ? (
+                    <Tooltip title={text}>
+                        <span>{text.slice(0, 50)}...</span>
+                    </Tooltip>
+                ) : (
+                    text
+                ),
+        },
+        {
             title: 'Comment',
             dataIndex: 'Comment',
             key: 'Comment',
@@ -481,8 +496,7 @@ const QLTL = () => {
         // Lọc dữ liệu dựa trên VersionId và BoPhan có trong BoPhanGui
         const usersData = allData.filter(item =>
             item.TaiLieuId === record.TaiLieuId &&
-            // (boPhanGuiArray.length === 0 || boPhanGuiArray.includes(item.BoPhan)) && 
-            item.ChucVu !== "admin" // Loại bỏ admin
+            !item.ChucVu.toLowerCase().includes("admin") // Loại bỏ admin
         );
 
         setStatusData(usersData);
@@ -557,6 +571,7 @@ const QLTL = () => {
                                 <Table
                                     columns={columns}
                                     dataSource={groupedData}
+                                    scroll={{ y: 55 * 9 }}
                                     onRow={(record) => ({
                                         onClick: (event) => {
                                             setModalTitle(record.TenSanPham)
@@ -635,7 +650,7 @@ const QLTL = () => {
                     <Table
                         dataSource={modalVersionData}
                         columns={modalVersionColumns}
-                        rowKey="VersionId"
+                        rowKey="TaiLieuId"
                         pagination={false}
                         className={style.tableVersions}
                         scroll={{ y: 55 * 9 }}

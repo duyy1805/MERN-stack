@@ -85,6 +85,7 @@ const QLQT = () => {
 
     // Khi người dùng click vào 1 hàng, mở PDF ngay lập tức
     const handleViewPdf = async (record) => {
+        setModalVisible(false);
         setCurrentRecord(record);
         console.log(record)
         if (record.VersionId === null) {
