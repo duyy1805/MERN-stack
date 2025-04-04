@@ -863,7 +863,7 @@ const Admin_SP = () => {
                 {contextHolder}
                 <Row gutter={[16, 16]}>
                     <Col xs={24} sm={8}>
-                        <Card style={{ backgroundColor: '#001529', border: 'none' }}>
+                        <Card style={{ backgroundColor: '#ffffff', border: 'none' }}>
                             <Select
                                 showSearch
                                 size="large"
@@ -877,7 +877,7 @@ const Admin_SP = () => {
                         </Card>
                     </Col>
                     <Col xs={24} sm={8}>
-                        <Card style={{ backgroundColor: '#001529', border: 'none' }}>
+                        <Card style={{ backgroundColor: '#ffffff', border: 'none' }}>
                             <Select
                                 showSearch
                                 size="large"
@@ -891,7 +891,7 @@ const Admin_SP = () => {
                         </Card>
                     </Col>
                     <Col xs={24} sm={4}>
-                        <Card style={{ backgroundColor: '#001529', border: 'none' }}>
+                        <Card style={{ backgroundColor: '#ffffff', border: 'none' }}>
                             <div style={{ display: 'flex', justifyContent: 'center' }}>
                                 <Button type="primary" onClick={() => setAddProcessModalVisible(true)}>Thêm sản phẩm mới</Button>
                             </div>
@@ -900,7 +900,7 @@ const Admin_SP = () => {
                     {/* Bảng phiên bản mới nhất */}
                     <Col xs={24} sm={24}>
 
-                        <Card style={{ backgroundColor: '#001529', border: 'none' }}>
+                        <Card style={{ backgroundColor: '#ffffff', border: 'none' }}>
                             {loading ? <Spin /> : (
                                 <Spin spinning={false}>
                                     <Form form={formEdit} component={false}>
@@ -934,9 +934,9 @@ const Admin_SP = () => {
                     footer={null}
                     className={style.modalVersions}
                     width={1000}
-                    style={{ backgroundColor: '#001529' }}
+                    style={{ backgroundColor: '#ffffff' }}
                 >
-                    <Card style={{ backgroundColor: '#001529', border: 'none' }}>
+                    <Card style={{ backgroundColor: '#ffffff', border: 'none' }}>
                         <Tabs defaultActiveKey="1" className={style.customTabs}>
                             <Tabs.TabPane tab="Tài liệu theo CCCode" key="1">
                                 <Table
@@ -984,7 +984,7 @@ const Admin_SP = () => {
                     ]}
                     className={style.modalVersions}
                     width={1000}
-                    style={{ backgroundColor: '#001529' }}
+                    style={{ backgroundColor: '#ffffff' }}
                 >
                     <Table
                         dataSource={modalVersionData}

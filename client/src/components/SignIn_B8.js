@@ -59,7 +59,7 @@ const SignIn_B8 = () => {
                 {contextHolder}
                 <Row gutter={[24, 0]} justify="center" align="middle" className="signin-row" style={{ minHeight: "100vh" }}>
                     <Col xs={24} sm={20} md={12} lg={8} className="signin-form-col">
-                        <Title className="mb-15">Quản lý quy trình, sản phẩm</Title>
+                        <Title className="mb-15">Quản lý tài liệu</Title>
                         <div style={{ display: "flex", justifyContent: "center" }}>
                             <Image
                                 height={200}

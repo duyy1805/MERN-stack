@@ -64,17 +64,17 @@ const AdminDashboard = () => {
         <Layout style={{ minHeight: "100vh", backgroundColor: "#162f48" }}>
             <Header
                 style={{
-                    background: "#001529",
+                    // background: "#001529",
                     display: 'flex',
                     height: '64px',
                     justifyContent: 'space-between',
                     padding: "0 20px 0 10px",
                     textAlign: "center",
                     color: "#fff",
-                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+                    // boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
                 }}
             >
-                <div style={{ fontSize: '20px', fontWeight: 'bold' }}>Quản lý quy trình</div>
+                <div style={{ fontSize: '20px', fontWeight: 'bold' }}>Quản lý tài liệu</div>
                 <Dropdown overlay={menu} trigger={['click']}>
                     <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                         <Avatar icon={<UserOutlined />} />

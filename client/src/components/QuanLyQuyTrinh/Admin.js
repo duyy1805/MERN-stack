@@ -96,7 +96,7 @@ const AppHeader = () => {
             background: '#fff',
             padding: '0 20px'
         }}>
-            <div style={{ fontSize: '20px', fontWeight: 'bold' }}>Quản lý quy trình</div>
+            <div style={{ fontSize: '20px', fontWeight: 'bold' }}>Quản lý tài liệu</div>
             <Dropdown overlay={menu} trigger={['click']}>
                 <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                     <Avatar icon={<UserOutlined />} />
@@ -107,30 +107,6 @@ const AppHeader = () => {
         </Header>
     );
 };
-const SELECT_ALL_OPTION = { label: "Select All", value: "_SELECT_ALL_OPTION" };
-
-function useSelectAllOption(options) {
-    const optionsWithAllOption = useMemo(() => [SELECT_ALL_OPTION, ...options], [
-        options
-    ]);
-
-    /** pass this to Form.Item's getValueFromEvent prop */
-    const getValueFromEvent = useCallback(
-        (value, selections) => {
-            if (!selections?.length) return selections;
-            if (!selections?.some((s) => s.value === SELECT_ALL_OPTION.value)) {
-                return selections;
-            }
-            const labelInValue = typeof value[0]?.label === "string";
-            // if "Select All" option selected, set value to all options
-            // also keep labelInValue in consideration
-            return labelInValue ? options : options.map((o) => o.value);
-        },
-        [options]
-    );
-
-    return [getValueFromEvent, optionsWithAllOption];
-}
 const Admin = () => {
     const [allData, setAllData] = useState([]); // tất cả phiên bản của các quy trình
     const [data, setData] = useState([]);         // phiên bản mới nhất của mỗi quy trình
@@ -139,6 +115,7 @@ const Admin = () => {
     const [loading, setLoading] = useState(false);
 
     const [modalVisible, setModalVisible] = useState(false);
+    const [prevModalVisible, setPrevModalVisible] = useState(false);
     const [modalData, setModalData] = useState([]); // dữ liệu các version của quy trình được chọn (mỗi phiên bản duy nhất)
     const [modalTitle, setModalTitle] = useState(''); // tên quy trình được chọn
     const [modalTitleId, setModalTitleId] = useState(''); // id quy trình được chọn
@@ -265,7 +242,20 @@ const Admin = () => {
 
             const names = Array.from(
                 new Set(list.map((item) => item.BoPhanBanHanh).filter(Boolean))
-            );
+            ).sort((a, b) => {
+                const matchA = a.match(/^B(\d+)/);
+                const matchB = b.match(/^B(\d+)/);
+
+                if (matchA && matchB) {
+                    return parseInt(matchA[1]) - parseInt(matchB[1]); // Sắp xếp số thứ tự B1 -> B9
+                }
+
+                if (matchA) return -1; // Các mục B1 - B9 đứng trước
+                if (matchB) return 1;
+
+                return 0; // Giữ nguyên vị trí nếu không phải B1 - B9
+            });
+            console.log(names)
             setAllProcessNames(names);
         } catch (error) {
             messageApi.open({
@@ -284,6 +274,7 @@ const Admin = () => {
 
     // Khi người dùng click vào 1 hàng, mở PDF ngay lập tức
     const handleViewPdf = async (record) => {
+        setPrevModalVisible(modalVisible); // Lưu trạng thái trước khi đóng
         setModalVisible(false);
         setCurrentRecord(record);
         if (record.PhienBan === null) {
@@ -453,13 +444,13 @@ const Admin = () => {
 
     const uniqueBoPhan = [...new Set(allData
         .map(item => item.BoPhan)
-        .filter(bp => bp))] // Loại bỏ giá trị NULL hoặc rỗng
+        .filter(bp => bp))]
 
     const boPhanOptions = uniqueBoPhan.map(bp => ({
         value: bp,
         label: bp
     }));
-    const [getValueFromEvent, optionsWithAllOption] = useSelectAllOption(boPhanOptions);
+
     const LPTFilters = createFilters('BoPhanBanHanh');
     const LPTFilters_TenQuyTrinh = createFilters('TenQuyTrinh');
     // Các cột cho bảng chính (phiên bản mới nhất của mỗi quy trình)
@@ -546,8 +537,8 @@ const Admin = () => {
                     align: "center",
                     render: (text, record) => (
                         <Popconfirm
-                            title="Bạn có chắc chắn muốn xóa phiên bản này?"
-                            onConfirm={(e) => { e.stopPropagation(); handleDeleteVersion(record.QuyTrinhVersionId) }}
+                            title="Bạn có chắc chắn muốn xóa quy trình này?"
+                            onConfirm={(e) => { e.stopPropagation(); handleDeleteQuyTrinh(record.QuyTrinhId) }}
                             onCancel={(e) => e.stopPropagation()}
                             okText="Xóa"
                             cancelText="Hủy"
@@ -648,14 +639,24 @@ const Admin = () => {
             // Sắp xếp theo BoPhanBanHanh trước
             const deptA = departmentOrder.indexOf(a.BoPhanBanHanh);
             const deptB = departmentOrder.indexOf(b.BoPhanBanHanh);
-            if (deptA !== deptB) return deptA - deptB; // Nếu khác nhau, sắp xếp theo thứ tự trong departmentOrder
+            if (deptA !== deptB) return deptA - deptB;
+
+            // Regex để kiểm tra mã số
+            const regex = /^([A-Z]+)\.(\d+)-(.+)$/;
+            const matchA = a.MaSo ? a.MaSo.match(regex) : null;
+            const matchB = b.MaSo ? b.MaSo.match(regex) : null;
+
+            // Nếu một trong hai không hợp lệ, cho xuống dưới
+            if (!matchA && !matchB) return 0; // Cả hai không hợp lệ, giữ nguyên thứ tự
+            if (!matchA) return 1; // a không hợp lệ, xếp xuống dưới
+            if (!matchB) return -1; // b không hợp lệ, xếp xuống trên
+
+            // Lấy thông tin từ MaSo
+            const [, typeA, numA] = matchA;
+            const [, typeB, numB] = matchB;
 
             // Sắp xếp theo loại mã (QT trước HD)
-            const regex = /^([A-Z]+)\.(\d+)-(.+)$/; // Tách mã loại, số và phần chữ
-            const [, typeA, numA, textA] = a.MaSo.match(regex);
-            const [, typeB, numB, textB] = b.MaSo.match(regex);
-
-            const typeComparison = typeB.localeCompare(typeA); // So sánh mã loại (QT, HD, ...)
+            const typeComparison = typeB.localeCompare(typeA);
             if (typeComparison !== 0) return typeComparison;
 
             // Sắp xếp theo số thứ tự
@@ -763,7 +764,7 @@ const Admin = () => {
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
         {
-            title: 'Comment',
+            title: 'Chỉnh sửa',
             dataIndex: 'Comment',
             key: 'Comment',
             width: "30%",
@@ -883,11 +884,11 @@ const Admin = () => {
 
     return (
         <Layout className={style.admin}>
-            <Content style={{ padding: 10, backgroundColor: '#162f48' }}>
+            <Content style={{ padding: 10, backgroundColor: '#f5f5f5' }}>
                 {contextHolder}
                 <Row gutter={[16, 16]}>
                     <Col xs={24} sm={8}>
-                        <Card style={{ backgroundColor: '#001529', border: 'none' }}>
+                        <Card style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)" }}>
                             <Select
                                 showSearch
                                 size="large"
@@ -901,7 +902,7 @@ const Admin = () => {
                         </Card>
                     </Col>
                     <Col xs={24} sm={8}>
-                        <Card style={{ backgroundColor: '#001529', border: 'none' }}>
+                        <Card style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)" }}>
                             <Select
                                 showSearch
                                 size="large"
@@ -915,7 +916,7 @@ const Admin = () => {
                         </Card>
                     </Col>
                     <Col xs={24} sm={4}>
-                        <Card style={{ backgroundColor: '#001529', border: 'none' }}>
+                        <Card style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)" }}>
                             <div style={{ display: 'flex', justifyContent: 'center' }}>
                                 <Button type="primary" onClick={() => setAddProcessModalVisible(true)}>Thêm quy trình mới</Button>
                             </div>
@@ -924,7 +925,7 @@ const Admin = () => {
                     {/* Bảng phiên bản mới nhất */}
                     <Col xs={24} sm={24}>
 
-                        <Card style={{ backgroundColor: '#001529', border: 'none' }}>
+                        <Card style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)" }}>
                             {loading ? <Spin /> : (
                                 <Form form={formEdit} component={false}>
                                     <Table
@@ -970,7 +971,6 @@ const Admin = () => {
                     ]}
                     className={style.modalVersions}
                     width={1000}
-                    style={{ backgroundColor: '#001529' }}
                 >
                     <Form form={formEdit_} component={false}>
                         <Table
@@ -1071,19 +1071,24 @@ const Admin = () => {
                 {/* --- Modal Nhập nhận xét --- */}
                 <Modal
                     title="Nhập nhận xét"
-                    visible={isCommentModalVisible}
+                    open={isCommentModalVisible}
                     onOk={handleConfirmComment}
                     onCancel={() => setIsCommentModalVisible(false)}
                     okText="Xác nhận"
                     cancelText="Hủy"
                     className={style.modalComment}
                 >
-                    <p>Nhập nhận xét của bạn:</p>
-                    <Input.TextArea
-                        rows={4}
-                        placeholder="Nhập nhận xét (nếu có)"
+                    <p>Chọn nhận xét của bạn:</p>
+                    <Select
+                        placeholder="Chọn nhận xét"
+                        style={{ width: "100%" }}
                         value={comment}
-                        onChange={(e) => setComment(e.target.value)}
+                        onChange={(value) => setComment(value)}
+                        options={[
+                            { value: "Tiếp nhận", label: "Tiếp nhận" },
+                            { value: "Đào tạo", label: "Đào tạo" },
+                            { value: "Tuân thủ", label: "Tuân thủ" }
+                        ]}
                     />
                 </Modal>
                 {/* --- Modal trạng thái người dùng của phiên bản --- */}
@@ -1092,7 +1097,7 @@ const Admin = () => {
                     title="Trạng thái người nhận"
                     visible={statusModalVisible}
                     onCancel={() => setStatusModalVisible(false)}
-                    width={1000}
+                    width="90%"
                     footer={[
                         <Button key="close" onClick={() => setStatusModalVisible(false)}>
                             Đóng
@@ -1124,6 +1129,27 @@ const Admin = () => {
                                 title: 'Ngày xem',
                                 dataIndex: 'NgayXem',
                                 key: 'NgayXem',
+                                render: (date) => date ? dayjs(date).format('YYYY-MM-DD HH:mm:ss') : '',
+                            },
+                            {
+                                title: 'Đồng ý',
+                                dataIndex: 'NgayDongY',
+                                key: 'NgayDongY',
+                                align: "center",
+                                render: (date) => date ? dayjs(date).format('YYYY-MM-DD HH:mm:ss') : '',
+                            },
+                            {
+                                title: 'Tuân thủ',
+                                dataIndex: 'NgayTuanThu',
+                                key: 'NgayTuanThu',
+                                align: "center",
+                                render: (date) => date ? dayjs(date).format('YYYY-MM-DD HH:mm:ss') : '',
+                            },
+                            {
+                                title: 'Đào tạo',
+                                dataIndex: 'NgayDaoTao',
+                                key: 'NgayDaoTao',
+                                align: "center",
                                 render: (date) => date ? dayjs(date).format('YYYY-MM-DD HH:mm:ss') : '',
                             },
                             {
@@ -1200,7 +1226,12 @@ const Admin = () => {
                 {pdfVisible && (
                     <ViewerPDF
                         fileUrl={pdfUrl}
-                        onClose={() => { setPdfVisible(false) }}
+                        onClose={() => {
+                            setPdfVisible(false);
+                            if (prevModalVisible) {
+                                setModalVisible(true); // Mở lại modal nếu trước đó đang mở
+                            }
+                        }}
                         onComment={handleOpenCommentModal}
                     />
                 )}

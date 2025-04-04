@@ -60,10 +60,9 @@ const User = () => {
     };
 
     return (
-        <Layout style={{ minHeight: "100vh", backgroundColor: "#162f48" }}>
+        <Layout style={{ minHeight: "100vh", backgroundColor: "#fafafa" }}>
             <Header
                 style={{
-                    background: "#001529",
                     display: 'flex',
                     height: '64px',
                     justifyContent: 'space-between',
@@ -73,7 +72,7 @@ const User = () => {
                     boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
                 }}
             >
-                <div style={{ fontSize: '20px', fontWeight: 'bold' }}>Quản lý quy trình</div>
+                <div style={{ fontSize: '20px', fontWeight: 'bold' }}>Quản lý tài liệu</div>
                 <Dropdown overlay={menu} trigger={['click']}>
                     <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                         <Avatar icon={<UserOutlined />} />

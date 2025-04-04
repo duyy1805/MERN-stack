@@ -5,16 +5,19 @@ import {
     Card, Typography
 } from 'antd';
 import { PieChart, Pie, Cell, Tooltip as TooltipRechart, Legend, ResponsiveContainer } from "recharts";
-import { UploadOutlined, SettingOutlined, UserOutlined } from '@ant-design/icons';
+import PizZip from "pizzip";
+import Docxtemplater from "docxtemplater";
+import { saveAs } from "file-saver";
 import axios from 'axios';
 import dayjs from 'dayjs';
 import apiConfig from '../../apiConfig.json';
 import ViewerPDF from './ViewerPDF';
-import { Link, useHistory } from "react-router-dom";
 import style from './QLQT.module.css';
 
-const { Search } = Input;
-
+const loadFile = async (url) => {
+    const response = await fetch(url);
+    return response.arrayBuffer();
+};
 const { Header, Content } = Layout;
 
 const QLQT = () => {
@@ -24,12 +27,16 @@ const QLQT = () => {
     const [loading, setLoading] = useState(false);
 
     const [modalVisible, setModalVisible] = useState(false);
+    const [prevModalVisible, setPrevModalVisible] = useState(false);
     const [modalData, setModalData] = useState([]); // dữ liệu phiên bản của quy trình được chọn
     const [modalTitle, setModalTitle] = useState(''); // tên quy trình được chọn
     const [modalTitleId, setModalTitleId] = useState(''); // id quy trình được chọn
 
-    const [form] = Form.useForm();
-    const [file, setFile] = useState(null);
+    const [isModalSuaDoiOpen, setIsModalSuaDoiOpen] = useState(false);
+    const [formSuaDoi] = Form.useForm();
+    const [taiLieuList, setTaiLieuList] = useState([]);
+
+
     const [pdfVisible, setPdfVisible] = useState(false);
     const [pdfUrl, setPdfUrl] = useState('');
 
@@ -40,6 +47,57 @@ const QLQT = () => {
 
     const [messageApi, contextHolder] = message.useMessage();
     // Hàm xử lý khi người dùng xác nhận nhận xét
+
+    const handleOpenSuaDoiModal = () => {
+        formSuaDoi.resetFields();
+        setTaiLieuList([]); // Reset danh sách tài liệu khi mở modal
+        setIsModalSuaDoiOpen(true);
+    };
+    const addTaiLieu = () => {
+        setTaiLieuList([...taiLieuList, { key: Date.now(), TenTaiLieu: "", MaTaiLieu: "", NoiDungYeuCau: "", LyDo: "" }]);
+    };
+
+    const updateTaiLieu = (key, field, value) => {
+        setTaiLieuList(taiLieuList.map(item => (item.key === key ? { ...item, [field]: value } : item)));
+    };
+
+    const handleGenerate = async (values) => {
+        try {
+            message.loading({ content: "Đang tạo file...", key: "docx" });
+
+            // Chuẩn bị dữ liệu với ngày tháng tự động
+            const finalData = {
+                ...values,
+                NgayYeuCau: dayjs().format("DD/MM/YYYY"),
+                SoanThaoMoi: 1,
+                ChinhSua: 0,
+                BanHanh: 0,
+                TaiLieu: taiLieuList.map((item, index) => ({
+                    Stt: index + 1,
+                    ...item
+                })),
+                NgayYKienTruongBoPhan: dayjs().format("DD/MM/YYYY"),
+                // NgayYKienBoPhanQuanLy: dayjs().format("DD/MM/YYYY"),
+            };
+
+            // Load template DOCX
+            const content = await loadFile("/temp.docx");
+            const zip = new PizZip(content);
+            const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
+
+            doc.setData(finalData);
+            doc.render();
+
+            const output = doc.getZip().generate({ type: "blob" });
+            saveAs(output, "output.docx");
+
+            message.success({ content: "Xuất file DOCX thành công!", key: "docx" });
+            setIsModalSuaDoiOpen(false);
+        } catch (error) {
+            console.error("Lỗi khi tạo file DOCX:", error);
+            message.error("Có lỗi xảy ra, vui lòng thử lại!");
+        }
+    };
     const handleConfirmComment = async () => {
         try {
             const userId = localStorage.getItem('userId');
@@ -48,9 +106,23 @@ const QLQT = () => {
                 QuyTrinhVersionId: currentRecord.VersionId,
                 NhanXet: comment
             });
-            message.success("Đã đánh dấu tài liệu là đã xem và ghi nhận nhận xét!");
+            setModalData((prevData) =>
+                prevData.map((item) =>
+                    item.VersionId === currentRecord.VersionId
+                        ? { ...item, NhanXet: comment } // Cập nhật nhận xét
+                        : item
+                )
+            );
+            setData((prevData) =>
+                prevData.map((item) =>
+                    item.VersionId === currentRecord.VersionId
+                        ? { ...item, NhanXet: comment } // Cập nhật nhận xét
+                        : item
+                )
+            );
+            messageApi.open({ type: 'success', content: `Đã đánh dấu tài liệu là đã xem !` });
         } catch (error) {
-            message.error("Có lỗi xảy ra khi đánh dấu đã xem: " + error.message);
+            messageApi.open({ type: 'error', content: "Có lỗi xảy ra khi đánh dấu đã xem" });
         } finally {
             setIsCommentModalVisible(false);
             setComment('');
@@ -85,6 +157,7 @@ const QLQT = () => {
 
     // Khi người dùng click vào 1 hàng, mở PDF ngay lập tức
     const handleViewPdf = async (record) => {
+        setPrevModalVisible(modalVisible); // Lưu trạng thái trước khi đóng
         setModalVisible(false);
         setCurrentRecord(record);
         console.log(record)
@@ -98,17 +171,43 @@ const QLQT = () => {
             const url = `${apiConfig.API_BASE_URL}/B8/viewPDF?QuyTrinhVersionId=${record.VersionId}`;
             setPdfUrl(url);
             setPdfVisible(true);
-            try {
-                const userId = localStorage.getItem('userId');
-                await axios.post(`${apiConfig.API_BASE_URL}/B8/markAsViewed`, {
-                    NguoiDungId: parseInt(userId),
-                    QuyTrinhVersionId: record.VersionId,
-                    NhanXet: 'NULL',
-                });
-                message.success("Đã xem");
-            } catch (error) {
-                console.log(error)
-                message.error("Có lỗi xảy ra khi đánh dấu đã xem: " + error.message);
+            if (record.NgayXem === null) {
+                try {
+                    const userId = localStorage.getItem('userId');
+                    await axios.post(`${apiConfig.API_BASE_URL}/B8/markAsViewed`, {
+                        NguoiDungId: parseInt(userId),
+                        QuyTrinhVersionId: record.VersionId,
+                        NhanXet: 'NULL',
+                    });
+
+                    // ✅ Cập nhật trực tiếp dữ liệu
+                    setData((prevData) =>
+                        prevData.map((item) =>
+                            item.VersionId === record.VersionId
+                                ? {
+                                    ...item,
+                                    TrangThai: "Đã xem",
+                                    NgayXem: dayjs().format("YYYY-MM-DD HH:mm:ss") // Định dạng ngày giờ
+                                }
+                                : item
+                        )
+                    );
+                    setAllData((prevData) =>
+                        prevData.map((item) =>
+                            item.VersionId === record.VersionId
+                                ? {
+                                    ...item,
+                                    TrangThai: "Đã xem",
+                                    NgayXem: dayjs().format("YYYY-MM-DD HH:mm:ss") // Định dạng ngày giờ
+                                }
+                                : item
+                        )
+                    );
+                    message.success("Đã xem");
+                } catch (error) {
+                    console.log(error);
+                    message.error("Có lỗi xảy ra khi đánh dấu đã xem: " + error.message);
+                }
             }
         }
     };
@@ -267,7 +366,40 @@ const QLQT = () => {
             setData(getLatestVersions(allData)); // Nếu không chọn gì, hiển thị toàn bộ
         }
     };
+    const handleConfirm = async (record, field) => {
+        try {
+            const userId = localStorage.getItem('userId');
+            const response = await axios.post(`${apiConfig.API_BASE_URL}/B8/confirmAction`, {
+                NguoiDungId: parseInt(userId),
+                QuyTrinhVersionId: record.VersionId,
+                Field: field,
+            });
 
+            if (response.data.success) {
+                messageApi.open({ type: 'success', content: `Đã xác nhận ${field} thành công!` });
+                // Cập nhật trạng thái modalData
+                setModalData((prevData) =>
+                    prevData.map((item) =>
+                        item.QuyTrinhVersionId === record.QuyTrinhVersionId
+                            ? { ...item, [field]: dayjs().format('YYYY-MM-DD') }
+                            : item
+                    )
+                );
+            } else {
+                messageApi.open({ type: 'error', content: "Có lỗi xảy ra khi xác nhận" });
+            }
+        } catch (error) {
+            messageApi.open({ type: 'error', content: "Có lỗi xảy ra" });
+        }
+    };
+
+    const renderDateOrButton = (date, record, field) => {
+        return date ? dayjs(date).format('YYYY-MM-DD') : (
+            <Button type="primary" size="small" onClick={(e) => { e.stopPropagation(); handleConfirm(record, field) }}>
+                Xác nhận
+            </Button>
+        );
+    };
     // Định nghĩa cột cho bảng trong modal hiển thị danh sách phiên bản
     const modalColumns = [
         {
@@ -284,7 +416,7 @@ const QLQT = () => {
             },
         },
         {
-            title: 'Nhận xét',
+            title: 'Trạng thái',
             dataIndex: 'NhanXet',
             key: 'NhanXet',
         },
@@ -314,6 +446,27 @@ const QLQT = () => {
             align: "center",
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
+        // {
+        //     title: 'Đồng ý',
+        //     dataIndex: 'NgayDongY',
+        //     key: 'NgayDongY',
+        //     align: "center",
+        //     render: (date, record) => renderDateOrButton(date, record, 'NgayDongY'),
+        // },
+        // {
+        //     title: 'Tuân thủ',
+        //     dataIndex: 'NgayTuanThu',
+        //     key: 'NgayTuanThu',
+        //     align: "center",
+        //     render: (date, record) => renderDateOrButton(date, record, 'NgayTuanThu'),
+        // },
+        // {
+        //     title: 'Đào tạo',
+        //     dataIndex: 'NgayDaoTao',
+        //     key: 'NgayDaoTao',
+        //     align: "center",
+        //     render: (date, record) => renderDateOrButton(date, record, 'NgayDaoTao'),
+        // },
         {
             title: 'Ghi chú',
             key: 'GhiChu',
@@ -344,12 +497,12 @@ const QLQT = () => {
     const COLORS = ["#0088FE", "#f63d3de0"];
     return (
         <Layout className={style.admin}>
-            <Content style={{ padding: 10, backgroundColor: '#162f48' }}>
+            <Content style={{ padding: 10, backgroundColor: '#f5f5f5' }}>
                 {contextHolder}
                 <Row gutter={[16, 16]}>
                     {/* Cột bên trái: ô tìm kiếm */}
                     <Col xs={24} sm={8}>
-                        <Card title="Tài liệu được nhận" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
+                        <Card title="Tài liệu được nhận" style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)", marginBottom: 16 }}>
                             <ResponsiveContainer width="100%" height={100}>
                                 <PieChart >
                                     <Pie
@@ -386,14 +539,14 @@ const QLQT = () => {
                     </Col> */}
                     {/* Cột bên phải: bảng danh sách phiên bản mới nhất */}
                     <Col xs={24} sm={8}>
-                        <Card title="Tài liệu mới" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
-                            <Typography.Title level={2} style={{ color: "#fff", textAlign: "center" }}>
+                        <Card title="Tài liệu mới" style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)", marginBottom: 16 }}>
+                            <Typography.Title level={2} style={{ textAlign: "center" }}>
                                 {taiLieuMoi.length}
                             </Typography.Title>
                         </Card>
                     </Col>
                     <Col xs={24} sm={24}>
-                        <Card style={{ backgroundColor: '#001529', border: 'none' }}>
+                        <Card style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)" }}>
                             {loading ? <Spin /> : <Table
                                 dataSource={data}
                                 columns={columns}
@@ -419,7 +572,7 @@ const QLQT = () => {
                             Đóng
                         </Button>
                     ]}
-                    width={1000}
+                    width="90%"
                 >
                     <Table
                         dataSource={modalData}
@@ -436,26 +589,90 @@ const QLQT = () => {
                 {/* Modal nhập nhận xét */}
                 <Modal
                     title="Nhập nhận xét"
-                    className={style.modalVersions}
-                    visible={isCommentModalVisible}
+                    open={isCommentModalVisible}
                     onOk={handleConfirmComment}
                     onCancel={() => setIsCommentModalVisible(false)}
                     okText="Xác nhận"
                     cancelText="Hủy"
+                    className={style.modalComment}
                 >
-                    <p>Nhập nhận xét của bạn:</p>
-                    <Input.TextArea
-                        rows={4}
-                        placeholder="Nhập nhận xét (nếu có)"
+                    <p>Chọn nhận xét của bạn:</p>
+                    <Select
+                        placeholder="Chọn nhận xét"
+                        style={{ width: "100%" }}
                         value={comment}
-                        onChange={(e) => setComment(e.target.value)}
+                        onChange={(value) => setComment(value)}
+                        options={[
+                            { value: "Tiếp nhận", label: "Tiếp nhận" },
+                            { value: "Đào tạo", label: "Đào tạo" },
+                            { value: "Tuân thủ", label: "Tuân thủ" }
+                        ]}
                     />
+                </Modal>
+                <Modal
+                    title="Nhập Dữ Liệu Tạo DOCX"
+                    open={isModalSuaDoiOpen}
+                    onCancel={() => setIsModalSuaDoiOpen(false)}
+                    footer={null}
+                    width={800}
+                >
+                    <Form form={formSuaDoi} layout="vertical" onFinish={handleGenerate}>
+                        <Form.Item label="Người yêu cầu" name="NguoiYeuCau" rules={[{ required: true }]}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item label="Bộ phận" name="BoPhan" rules={[{ required: true }]}>
+                            <Input />
+                        </Form.Item>
+
+                        <h3>Danh sách tài liệu</h3>
+                        <Table
+                            dataSource={taiLieuList}
+                            columns={[
+                                { title: "Tên tài liệu", dataIndex: "TenTaiLieu", render: (_, record) => <Input onChange={e => updateTaiLieu(record.key, "TenTaiLieu", e.target.value)} /> },
+                                { title: "Mã tài liệu", dataIndex: "MaTaiLieu", render: (_, record) => <Input onChange={e => updateTaiLieu(record.key, "MaTaiLieu", e.target.value)} /> },
+                                { title: "Nội dung yêu cầu", dataIndex: "NoiDungYeuCau", render: (_, record) => <Input onChange={e => updateTaiLieu(record.key, "NoiDungYeuCau", e.target.value)} /> },
+                                { title: "Lý do", dataIndex: "LyDo", render: (_, record) => <Input onChange={e => updateTaiLieu(record.key, "LyDo", e.target.value)} /> },
+                            ]}
+                            pagination={false}
+                        />
+                        <Button type="dashed" onClick={addTaiLieu} style={{ marginTop: 10 }}>
+                            Thêm tài liệu
+                        </Button>
+
+                        <h3>Ý kiến</h3>
+                        <Form.Item label="Ý kiến của trưởng/phó bộ phận yêu cầu soạn thảo" name="YKienTruongBoPhan">
+                            <Input.TextArea />
+                        </Form.Item>
+                        <Form.Item label="Chữ ký (ghi rõ họ tên) của trưởng/phó bộ phận" name="ChuKyTruongBoPhan">
+                            <Input />
+                        </Form.Item>
+
+                        {/* <Form.Item label="Ý kiến của Bộ phận Quản lý hệ thống" name="YKienBoPhanQuanLy">
+                            <Input.TextArea />
+                        </Form.Item>
+                        <Form.Item label="Chữ ký (ghi rõ họ tên) của Bộ phận Quản lý hệ thống" name="ChuKyBoPhanQuanLy">
+                            <Input />
+                        </Form.Item> */}
+
+                        <Form.Item>
+                            <Button type="primary" htmlType="submit">
+                                Tạo DOCX
+                            </Button>
+                        </Form.Item>
+                    </Form>
                 </Modal>
                 {pdfVisible && (
                     <ViewerPDF
                         fileUrl={pdfUrl}
-                        onClose={() => { fetchData(); setPdfVisible(false) }}
+                        onClose={() => {
+                            setPdfVisible(false);
+                            if (prevModalVisible) {
+                                setModalVisible(true); // Mở lại modal nếu trước đó đang mở
+                            }
+                        }}
                         onComment={handleOpenCommentModal}
+                        onSuaDoi={handleOpenSuaDoiModal}
+                    // onGopY={handleOpenGopYModal}
                     />
                 )}
             </Content>

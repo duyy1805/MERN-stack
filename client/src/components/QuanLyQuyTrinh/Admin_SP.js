@@ -78,6 +78,10 @@ const Admin_SP = () => {
     const [modalVersionVisible, setModalVersionVisible] = useState(false);
     const [modalVersionData, setModalVersionData] = useState([]);
 
+    const [prevModalVisible, setPrevModalVisible] = useState(false);
+    const [prevModalVersionVisible, setPrevModalVersionVisible] = useState(false);
+
+
     const [modalTitle, setModalTitle] = useState(''); // tên sản phẩm được chọn
     const [modalTaiLieuTitle, setModalTaiLieuTitle] = useState('');
 
@@ -191,6 +195,9 @@ const Admin_SP = () => {
 
     // Khi người dùng click vào 1 hàng, mở PDF ngay lập tức
     const handleViewPdf = async (record) => {
+        setPrevModalVisible(modalVisible);
+        setPrevModalVersionVisible(modalVersionVisible);
+
         setModalVisible(false);
         setModalVersionVisible(false);
         setCurrentRecord(record);
@@ -426,7 +433,8 @@ const Admin_SP = () => {
         { value: "STAREVER", label: "STAREVER" },
         { value: "FOUGANZA", label: "FOUGANZA" },
         { value: "PONGORI", label: "PONGORI" },
-        { value: "BTWIN", label: "BTWIN" }
+        { value: "BTWIN", label: "BTWIN" },
+        { value: "COVER", label: "COVER" }
     ];
     const theLoaiOptions = [
         { value: "BAG", label: "BAG" },
@@ -500,7 +508,7 @@ const Admin_SP = () => {
             dataIndex: "TenSanPham",
             key: "TenSanPham",
             editable: true,
-            // width: "20%",
+            width: "25%",
             filters: LPTFilters_TenSanPham,
             filterSearch: true,
             onFilter: (value, record) => record.TenSanPham.includes(value),
@@ -508,6 +516,21 @@ const Admin_SP = () => {
                 text && text.length > 50 ? (
                     <Tooltip title={text}>
                         <span>{text.slice(0, 50)}...</span>
+                    </Tooltip>
+                ) : (
+                    text
+                ),
+        },
+        {
+            title: 'Chỉnh sửa',
+            dataIndex: 'Comment',
+            key: 'Comment',
+            width: "15%",
+            editable: true,
+            render: (text) =>
+                text && text.length > 100 ? (
+                    <Tooltip title={text}>
+                        <span>{text.slice(0, 100)}...</span>
                     </Tooltip>
                 ) : (
                     text
@@ -642,7 +665,7 @@ const Admin_SP = () => {
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
         {
-            title: 'Comment',
+            title: 'Chỉnh sửa',
             dataIndex: 'Comment',
             key: 'Comment',
             width: "20%",
@@ -939,11 +962,11 @@ const Admin_SP = () => {
 
     return (
         <Layout className={style.admin}>
-            <Content style={{ padding: 10, backgroundColor: '#162f48' }}>
+            <Content style={{ padding: 10, backgroundColor: '#f5f5f5' }}>
                 {contextHolder}
                 <Row gutter={[16, 16]}>
                     <Col xs={24} sm={8}>
-                        <Card style={{ backgroundColor: '#001529', border: 'none' }}>
+                        <Card style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)" }}>
                             <Select
                                 showSearch
                                 size="large"
@@ -957,7 +980,7 @@ const Admin_SP = () => {
                         </Card>
                     </Col>
                     <Col xs={24} sm={8}>
-                        <Card style={{ backgroundColor: '#001529', border: 'none' }}>
+                        <Card style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)" }}>
                             <Select
                                 showSearch
                                 size="large"
@@ -971,7 +994,7 @@ const Admin_SP = () => {
                         </Card>
                     </Col>
                     <Col xs={24} sm={4}>
-                        <Card style={{ backgroundColor: '#001529', border: 'none' }}>
+                        <Card style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)" }}>
                             <div style={{ display: 'flex', justifyContent: 'center' }}>
                                 <Button type="primary" onClick={() => setAddProcessModalVisible(true)}>Thêm sản phẩm mới</Button>
                             </div>
@@ -980,13 +1003,14 @@ const Admin_SP = () => {
                     {/* Bảng phiên bản mới nhất */}
                     <Col xs={24} sm={24}>
 
-                        <Card style={{ backgroundColor: '#001529', border: 'none' }}>
+                        <Card style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)" }}>
                             {loading ? <Spin /> : (
                                 <Spin spinning={false}>
                                     <Form form={formEdit} component={false}>
                                         <Table
                                             columns={mergedColumns}
                                             dataSource={groupedData}
+                                            scroll={{ y: 55 * 10 }}
                                             components={{
                                                 body: { cell: EditableCell },
                                             }}
@@ -1019,11 +1043,13 @@ const Admin_SP = () => {
                     footer={null}
                     className={style.modalVersions}
                     width="80%"
-                    style={{ backgroundColor: '#001529' }}
                 >
-                    <Card style={{ backgroundColor: '#001529', border: 'none' }}>
+                    <Card style={{ backgroundColor: '', border: 'none' }}>
                         <Tabs defaultActiveKey="1" className={style.customTabs}>
-                            <Tabs.TabPane tab="Tài liệu theo CCCode" key="1">
+                            <Tabs.TabPane
+                                tab={`Tài liệu theo CCCode (${modalData?.subItems?.length || 0})`}
+                                key="1"
+                            >
                                 <Table
                                     className={style.tableVersions}
                                     columns={expandColumns}
@@ -1034,7 +1060,10 @@ const Admin_SP = () => {
                                     })}
                                 />
                             </Tabs.TabPane>
-                            <Tabs.TabPane tab="Tài liệu theo ItemCode" key="2">
+                            <Tabs.TabPane
+                                tab={`Tài liệu theo ItemCode (${modalData?.subItems_?.length || 0})`}
+                                key="2"
+                            >
                                 <Table
                                     className={style.tableVersions}
                                     columns={[
@@ -1069,7 +1098,6 @@ const Admin_SP = () => {
                     ]}
                     className={style.modalVersions}
                     width="80%"
-                    style={{ backgroundColor: '#001529' }}
                 >
                     <Table
                         dataSource={modalVersionData}
@@ -1185,12 +1213,17 @@ const Admin_SP = () => {
                     cancelText="Hủy"
                     className={style.modalComment}
                 >
-                    <p>Nhập nhận xét của bạn:</p>
-                    <Input.TextArea
-                        rows={4}
-                        placeholder="Nhập nhận xét (nếu có)"
+                    <p>Chọn nhận xét của bạn:</p>
+                    <Select
+                        placeholder="Chọn nhận xét"
+                        style={{ width: "100%" }}
                         value={comment}
-                        onChange={(e) => setComment(e.target.value)}
+                        onChange={(value) => setComment(value)}
+                        options={[
+                            { value: "Tiếp nhận", label: "Tiếp nhận" },
+                            { value: "Đào tạo", label: "Đào tạo" },
+                            { value: "Tuân thủ", label: "Tuân thủ" }
+                        ]}
                     />
                 </Modal>
                 {/* --- Modal trạng thái người dùng của phiên bản --- */}
@@ -1352,7 +1385,17 @@ const Admin_SP = () => {
                 {pdfVisible && (
                     <ViewerPDF
                         fileUrl={pdfUrl}
-                        onClose={() => { setPdfVisible(false) }}
+                        onClose={() => {
+                            setPdfVisible(false);
+
+                            // Mở lại modal nào trước đó đang mở
+                            if (prevModalVisible) {
+                                setModalVisible(true);
+                            }
+                            if (prevModalVersionVisible) {
+                                setModalVersionVisible(true);
+                            }
+                        }}
                         onComment={handleOpenCommentModal}
                     />
                 )}

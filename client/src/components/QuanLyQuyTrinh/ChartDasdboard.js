@@ -50,7 +50,7 @@ const AppHeader = () => {
             background: '#fff',
             padding: '0 20px'
         }}>
-            <div style={{ fontSize: '20px', fontWeight: 'bold' }}>Quản lý quy trình</div>
+            <div style={{ fontSize: '20px', fontWeight: 'bold' }}>Quản lý tài liệu</div>
             <Dropdown overlay={menu} trigger={['click']}>
                 <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                     <Avatar icon={<UserOutlined />} />
@@ -329,12 +329,12 @@ const ChartDasdboard = () => {
     const totalVersionsTL_IKEA = lineChartDataTL_IKEA.reduce((sum, item) => sum + item.count, 0);
     return (
         <Layout className={style.admin}>
-            <Content style={{ padding: 10, backgroundColor: '#162f48' }}>
+            <Content style={{ padding: 10, backgroundColor: '#f5f5f5' }}>
                 {contextHolder}
                 <Row gutter={[16, 16]}>
                     <Col xs={24} sm={12}>
-                        <Card title="Thống kê quy trình" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
-                            <ResponsiveContainer width="100%" height={250}>
+                        <Card title="Thống kê quy trình" headStyle={{ color: "#000" }} style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)", marginBottom: 16 }}>
+                            <ResponsiveContainer width="100%" height={300}>
                                 <PieChart>
                                     <Pie
                                         data={chartData}
@@ -351,17 +351,19 @@ const ChartDasdboard = () => {
                                         ))}
                                     </Pie>
                                     <RechartsTooltip />
-                                    <Legend layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{
-                                        maxHeight: 150, overflowY: "auto", scrollbarWidth: "thin",
-                                        scrollbarColor: "#FFFFFF #001529"
-                                    }} />
+                                    <Legend layout="vertical" align="right" verticalAlign="middle"
+                                    // wrapperStyle={{
+                                    //     maxHeight: 150, overflowY: "auto", scrollbarWidth: "thin",
+                                    //     scrollbarColor: "#FFFFFF #ffffff"
+                                    // }}
+                                    />
                                 </PieChart>
                             </ResponsiveContainer>
                         </Card>
                     </Col>
                     <Col xs={24} sm={8}>
-                        <Card title={`Số lượng phiên bản mới: ${totalVersions}`} headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
-                            <ResponsiveContainer width="100%" height={250}>
+                        <Card title={`Số lượng phiên bản mới: ${totalVersions}`} headStyle={{ color: "#000" }} style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)", marginBottom: 16 }}>
+                            <ResponsiveContainer width="100%" height={300}>
                                 <LineChart data={lineChartData}>
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis
@@ -376,14 +378,14 @@ const ChartDasdboard = () => {
                         </Card>
                     </Col>
                     <Col xs={24} sm={4}>
-                        <Card title="Tổng số lượng quy trình" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
-                            <Typography.Title level={2} style={{ color: "#fff", textAlign: "center" }}>
+                        <Card title="Tổng số lượng quy trình" headStyle={{ color: "#000" }} style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)", marginBottom: 16 }}>
+                            <Typography.Title level={2} style={{ color: "#000", textAlign: "center" }}>
                                 {data.length}
                             </Typography.Title>
                         </Card>
                     </Col>
                     <Col xs={24} sm={12}>
-                        <Card title="Thống kê sản phẩm DEK" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
+                        <Card title="Thống kê sản phẩm DEK" headStyle={{ color: "#000" }} style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)", marginBottom: 16 }}>
                             <ResponsiveContainer width="100%" height={250}>
                                 <PieChart>
                                     <Pie
@@ -403,7 +405,7 @@ const ChartDasdboard = () => {
                                     <RechartsTooltip />
                                     <Legend layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{
                                         maxHeight: 150, overflowY: "auto", scrollbarWidth: "thin",
-                                        scrollbarColor: "#FFFFFF #001529", width: 200, overflow: 'hidden',
+                                        scrollbarColor: "#FFFFFF #ffffff", width: 200, overflow: 'hidden',
                                         textOverflow: 'ellipsis', whiteSpace: 'nowrap'
                                     }} />
                                 </PieChart>
@@ -411,7 +413,7 @@ const ChartDasdboard = () => {
                         </Card>
                     </Col>
                     <Col xs={24} sm={8}>
-                        <Card title={`Số lượng phiên bản mới: ${totalVersionsTL}`} headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
+                        <Card title={`Số lượng phiên bản mới: ${totalVersionsTL}`} headStyle={{ color: "#000" }} style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)", marginBottom: 16 }}>
                             <ResponsiveContainer width="100%" height={250}>
                                 <LineChart data={lineChartDataTL}>
                                     <CartesianGrid strokeDasharray="3 3" />
@@ -427,14 +429,14 @@ const ChartDasdboard = () => {
                         </Card>
                     </Col>
                     <Col xs={24} sm={4}>
-                        <Card title="Tổng số lượng tài liệu" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
-                            <Typography.Title level={2} style={{ color: "#fff", textAlign: "center" }}>
+                        <Card title="Tổng số lượng tài liệu" headStyle={{ color: "#000" }} style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)", marginBottom: 16 }}>
+                            <Typography.Title level={2} style={{ color: "#000", textAlign: "center" }}>
                                 {dataTL.filter(item => item.KhachHang === "DEK").length}
                             </Typography.Title>
                         </Card>
                     </Col>
                     <Col xs={24} sm={12}>
-                        <Card title="Thống kê sản phẩm IKEA" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
+                        <Card title="Thống kê sản phẩm IKEA" headStyle={{ color: "#000" }} style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)", marginBottom: 16 }}>
                             <ResponsiveContainer width="100%" height={250}>
                                 <PieChart>
                                     <Pie
@@ -454,7 +456,7 @@ const ChartDasdboard = () => {
                                     <RechartsTooltip />
                                     <Legend layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{
                                         maxHeight: 150, overflowY: "auto", scrollbarWidth: "thin",
-                                        scrollbarColor: "#FFFFFF #001529", width: 200, overflow: 'hidden',
+                                        scrollbarColor: "#FFFFFF #ffffff", width: 200, overflow: 'hidden',
                                         textOverflow: 'ellipsis', whiteSpace: 'nowrap'
                                     }} />
                                 </PieChart>
@@ -462,7 +464,7 @@ const ChartDasdboard = () => {
                         </Card>
                     </Col>
                     <Col xs={24} sm={8}>
-                        <Card title={`Số lượng phiên bản mới: ${totalVersionsTL_IKEA}`} headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
+                        <Card title={`Số lượng phiên bản mới: ${totalVersionsTL_IKEA}`} headStyle={{ color: "#000" }} style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)", marginBottom: 16 }}>
                             <ResponsiveContainer width="100%" height={250}>
                                 <LineChart data={lineChartDataTL_IKEA}>
                                     <CartesianGrid strokeDasharray="3 3" />
@@ -478,8 +480,8 @@ const ChartDasdboard = () => {
                         </Card>
                     </Col>
                     <Col xs={24} sm={4}>
-                        <Card title="Tổng số lượng tài liệu" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
-                            <Typography.Title level={2} style={{ color: "#fff", textAlign: "center" }}>
+                        <Card title="Tổng số lượng tài liệu" headStyle={{ color: "#000" }} style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)", marginBottom: 16 }}>
+                            <Typography.Title level={2} style={{ color: "#000", textAlign: "center" }}>
                                 {dataTL.filter(item => item.KhachHang === "IKEA" && item.TenTaiLieu !== null).length}
                             </Typography.Title>
                         </Card>

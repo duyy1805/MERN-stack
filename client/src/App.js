@@ -12,12 +12,13 @@ import PrivateRoute_B3 from "./components/PrivateRoute_B3";
 import PrivateRoute_B8 from "./components/PrivateRoute_B8";
 import NotFound from "./components/NotFound"
 import CSPN from "./components/QuanLyChuyenMay/CSPN"
+import QRCodeScanner from "./components/QRCodeScanner";
 
 function App() {
   return (
     <Router>
       <Switch>
-        <Route exact path="/CSPN" component={CSPN} />
+        <Route exact path="/QRCodeScanner" component={QRCodeScanner} />
         <Route exact path="/B3" component={SignIn} />
         <Route exact path="/B2" component={SignIn_B2} />
         <Route exact path="/B8" component={SignIn_B8} />

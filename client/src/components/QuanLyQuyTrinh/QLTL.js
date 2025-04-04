@@ -461,7 +461,7 @@ const QLTL = () => {
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
         {
-            title: 'NhanXet',
+            title: 'Nhận xét',
             dataIndex: 'NhanXet',
             key: 'NhanXet',
             render: (text) =>
@@ -529,18 +529,18 @@ const QLTL = () => {
     const COLORS = ["#0088FE", "#f63d3de0"];
     return (
         <Layout className={style.admin}>
-            <Content style={{ padding: 10, backgroundColor: '#162f48' }}>
+            <Content style={{ padding: 10, backgroundColor: '#f5f5f5' }}>
                 {contextHolder}
                 <Row gutter={[16, 16]}>
                     <Col xs={24} sm={8}>
-                        <Card title="Tài liệu được nhận" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
-                            <ResponsiveContainer width="100%" height={160}>
+                        <Card title="Tài liệu được nhận" style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)", marginBottom: 16 }}>
+                            <ResponsiveContainer width="100%" height={100}>
                                 <PieChart >
                                     <Pie
                                         data={piedata}
                                         cx="50%"
                                         cy="50%"
-                                        outerRadius={30}
+                                        outerRadius={40}
                                         fill="#8884d8"
                                         dataKey="value"
                                         label
@@ -557,8 +557,8 @@ const QLTL = () => {
                     </Col>
 
                     <Col xs={24} sm={8}>
-                        <Card title="Tài liệu mới" headStyle={{ color: "#fff" }} style={{ backgroundColor: '#001529', border: 'none', marginBottom: 16 }}>
-                            <Typography.Title level={2} style={{ color: "#fff", textAlign: "center" }}>
+                        <Card title="Tài liệu mới" style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)", marginBottom: 16 }}>
+                            <Typography.Title level={2} style={{ textAlign: "center" }}>
                                 {taiLieuMoi.length}
                             </Typography.Title>
                         </Card>
@@ -566,7 +566,7 @@ const QLTL = () => {
                     {/* Bảng phiên bản mới nhất */}
                     <Col xs={24} sm={24}>
 
-                        <Card style={{ backgroundColor: '#001529', border: 'none' }}>
+                        <Card style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)" }}>
                             {loading ? <Spin /> : (
                                 <Table
                                     columns={columns}
@@ -594,11 +594,14 @@ const QLTL = () => {
                     footer={null}
                     className={style.modalVersions}
                     width="80%"
-                    style={{ backgroundColor: '#001529' }}
+                    style={{ backgroundColor: '#ffffff' }}
                 >
-                    <Card style={{ backgroundColor: '#001529', border: 'none' }}>
+                    <Card style={{ backgroundColor: '', border: 'none' }}>
                         <Tabs defaultActiveKey="1" className={style.customTabs}>
-                            <Tabs.TabPane tab="Tài liệu theo CCCode" key="1">
+                            <Tabs.TabPane
+                                tab={`Tài liệu theo CCCode (${modalData?.subItems?.length || 0})`}
+                                key="1"
+                            >
                                 <Table
                                     className={style.tableVersions}
                                     columns={expandColumns}
@@ -610,7 +613,10 @@ const QLTL = () => {
                                     rowClassName={(record) => record.TrangThai === 'Chưa xem' ? style.notViewed : ''}
                                 />
                             </Tabs.TabPane>
-                            <Tabs.TabPane tab="Tài liệu theo ItemCode" key="2">
+                            <Tabs.TabPane
+                                tab={`Tài liệu theo ItemCode (${modalData?.subItems_?.length || 0})`}
+                                key="2"
+                            >
                                 <Table
                                     className={style.tableVersions}
                                     columns={[
@@ -645,7 +651,7 @@ const QLTL = () => {
                     ]}
                     className={style.modalVersions}
                     width="80%"
-                    style={{ backgroundColor: '#001529' }}
+                    style={{ backgroundColor: '#ffffff' }}
                 >
                     <Table
                         dataSource={modalVersionData}
@@ -663,19 +669,24 @@ const QLTL = () => {
                 {/* --- Modal Nhập nhận xét --- */}
                 <Modal
                     title="Nhập nhận xét"
-                    visible={isCommentModalVisible}
+                    open={isCommentModalVisible}
                     onOk={handleConfirmComment}
                     onCancel={() => setIsCommentModalVisible(false)}
                     okText="Xác nhận"
                     cancelText="Hủy"
                     className={style.modalComment}
                 >
-                    <p>Nhập nhận xét của bạn:</p>
-                    <Input.TextArea
-                        rows={4}
-                        placeholder="Nhập nhận xét (nếu có)"
+                    <p>Chọn nhận xét của bạn:</p>
+                    <Select
+                        placeholder="Chọn nhận xét"
+                        style={{ width: "100%" }}
                         value={comment}
-                        onChange={(e) => setComment(e.target.value)}
+                        onChange={(value) => setComment(value)}
+                        options={[
+                            { value: "Tiếp nhận", label: "Tiếp nhận" },
+                            { value: "Đào tạo", label: "Đào tạo" },
+                            { value: "Tuân thủ", label: "Tuân thủ" }
+                        ]}
                     />
                 </Modal>
 
