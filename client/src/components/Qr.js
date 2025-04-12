@@ -27,6 +27,7 @@ function Qr() {
     const [addDeviceModalVisible, setAddDeviceModalVisible] = useState(false); // Trạng thái modal thêm thiết bị
     const [newDevice, setNewDevice] = useState({ LoaiPhuongTien: "", ViTri: "", TanSuat: "" }); // Thêm tần suất vào state
     const scannerRef = useRef(null);
+    const devicesRef = useRef([]);
     const [messageApi, contextHolder] = message.useMessage();
     const [form] = Form.useForm();
     const { Option } = Select;
@@ -92,9 +93,14 @@ function Qr() {
         fetchDevices();
     }, []);
 
-    // Chỉ khởi tạo scanner khi devices đã có dữ liệu
+    // Cập nhật devices mới nhất vào ref
     useEffect(() => {
-        if (devices.length > 0 && !scannerRef.current) {
+        devicesRef.current = devices;
+    }, [devices]);
+
+    // Chỉ khởi tạo scanner 1 lần
+    useEffect(() => {
+        if (!scannerRef.current) {
             scannerRef.current = new Html5QrcodeScanner(
                 "qr-reader",
                 { fps: 10, qrbox: { width: 250, height: 250 } },
@@ -106,46 +112,34 @@ function Qr() {
                     console.log("QR Code Scanned:", decodedText);
                     setScannedData(decodedText);
 
-                    try {
-                        const scannedDevice = JSON.parse(decodedText);
-                        console.log("Scanned Device:", scannedDevice);
+                    const maThietBi = decodedText.trim();
+                    const latestDevices = devicesRef.current;
 
-                        // Tìm thiết bị trong danh sách
-                        const deviceList = devices.filter(d => d.MaThietBi === scannedDevice.MaThietBi);
-                        console.log(devices);
-                        if (deviceList.length > 0) {
-                            setSelectedDevice(deviceList);
-                            setModalVisible(true);
-                        } else {
-                            messageApi.open({ // Corrected message API usage
-                                type: 'warning',
-                                content: `Thiết bị không tồn tại trong danh sách.`,
-                            });
-                        }
-                    } catch (error) {
-                        messageApi.open({ // Corrected message API usage
-                            type: 'error',
-                            content: `QR Code không hợp lệ!`,
+                    const deviceList = latestDevices.filter(d => d.MaThietBi === maThietBi);
+
+                    if (deviceList.length > 0) {
+                        setSelectedDevice(deviceList);
+                        setModalVisible(true);
+                    } else {
+                        messageApi.open({
+                            type: 'warning',
+                            content: `Thiết bị không tồn tại trong danh sách.`,
                         });
                     }
                 },
-                (error) => {
-                    console.error("Không thể quét QR Code:");
-                    // messageApi.open({ // Corrected message API usage
-                    //     type: 'error',
-                    //     content: `Không thể quét QR Code`,
-                    // });
+                (errorMessage) => {
+                    console.warn("QR Scan Error:", errorMessage);
                 }
             );
         }
 
         return () => {
             if (scannerRef.current) {
-                scannerRef.current.clear();
+                scannerRef.current.clear().catch(e => console.error(e));
                 scannerRef.current = null;
             }
         };
-    }, [devices]); // Chỉ chạy khi `devices` thay đổi
+    }, []);
 
     const deviceTypes = [
         "Tủ báo cháy trung tâm",
@@ -161,12 +155,10 @@ function Qr() {
         "Chuông báo cháy",
         "Quả cầu chữa cháy",
     ];
-    // Tạo nội dung QR Code
     const generateQRCode = (device) => {
-        return JSON.stringify({ MaThietBi: device.MaThietBi, LoaiPhuongTien: device.LoaiPhuongTien });
+        return device.MaThietBi;
     };
 
-    // Hàm cập nhật kết quả kiểm tra
     const updateTestResult = async (IDNoiDungKiemTra, KetQua) => {
         try {
             await axios.post(API_UPDATE_RESULT, { IDNoiDungKiemTra, KetQua });

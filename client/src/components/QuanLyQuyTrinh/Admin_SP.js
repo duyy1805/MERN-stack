@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
     Row, Tabs,
     Col,
@@ -22,6 +22,10 @@ import {
 import { UploadOutlined, SettingOutlined, UserOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import dayjs from 'dayjs';
+import PizZip from "pizzip";
+import Docxtemplater from "docxtemplater";
+import { saveAs } from "file-saver";
+import { renderAsync } from "docx-preview";
 import apiConfig from '../../apiConfig.json';
 import ViewerPDF from './ViewerPDF';
 import { Link, useHistory } from "react-router-dom";
@@ -88,6 +92,21 @@ const Admin_SP = () => {
     const [modalTitleId, setModalTitleId] = useState(''); // id sản phẩm được chọn
     const [bPN, setBPN] = useState('');
 
+    const [dataFeedback, setDataFeedback] = useState([]);
+    const [dataFeedback_, setDataFeedback_] = useState([]);
+    const [modalFeedbackData, setModalFeedbackData] = useState([]);
+    const [modalFeedbackTitle, setModalFeedbackTitle] = useState('');
+    const [modalFeedbackVisible, setModalFeedbackVisible] = useState(false);
+    const [modalFeedbackData_, setModalFeedbackData_] = useState([]);
+    const [modalFeedbackTitle_, setModalFeedbackTitle_] = useState('');
+    const [modalFeedbackVisible_, setModalFeedbackVisible_] = useState(false);
+    const [feedbackRecord, setFeedbackRecord] = useState(null);
+    const [feedbackRecord_, setFeedbackRecord_] = useState(null);
+    const [gopY, setGopY] = useState(false)
+    const [visible, setVisible] = useState(false);
+    const [isModalSuaDoiOpen, setIsModalSuaDoiOpen] = useState(false);
+    const [formSuaDoi] = Form.useForm();
+
     const [form] = Form.useForm();
     const [processForm] = Form.useForm();
 
@@ -112,6 +131,118 @@ const Admin_SP = () => {
 
     const [messageApi, contextHolder] = message.useMessage();
     const role = localStorage.getItem('role');
+
+
+    //xử lý cái sửa đổi hóp Ý
+    const fetchDataFeedback = async () => {
+        try {
+            const res = await axios.get(`${apiConfig.API_BASE_URL}/B8/tailieufeedback`);
+            const list = res.data;
+
+            // Lọc theo FilePath và FilePath_
+            const withFilePath = list.filter(item => item.FilePath_ == null);
+            const withoutFilePath_ = list.filter(item => item.FilePath == null);
+            console.log(withoutFilePath_)
+            setDataFeedback(withFilePath);
+            setDataFeedback_(withoutFilePath_);
+        } catch (error) {
+            messageApi.open({
+                type: 'error',
+                content: `Lỗi lấy dữ liệu`,
+            });
+        }
+    };
+    const handleOpenSuaDoiModal = () => {
+        formSuaDoi.resetFields();
+        setIsModalSuaDoiOpen(true);
+    };
+    const handleGenerate = async (values) => {
+        try {
+            message.loading({ content: "Đang tạo file...", key: "docx" });
+            console.log(feedbackRecord)
+            const finalData = {
+                ...values,
+                NgayYKienBoPhanQuanLy: dayjs().format("DD/MM/YYYY"),
+            };
+
+            // Tải file template từ server (ví dụ: file vừa view trước đó)
+            const fileResponse = await axios.get(`${apiConfig.API_BASE_URL}/B8/viewWordTL?id=${feedbackRecord.Id}`, {
+                responseType: "blob"
+            });
+
+            const arrayBuffer = await fileResponse.data.arrayBuffer();
+            const zip = new PizZip(arrayBuffer);
+
+            const doc = new Docxtemplater(zip, {
+                paragraphLoop: true,
+                linebreaks: true,
+            });
+
+            doc.setData(finalData);
+            doc.render();
+
+            const output = doc.getZip().generate({ type: "blob" });
+            saveAs(output, "output.docx");
+            const fileName = `XacNhan_${feedbackRecord.TenTaiLieu}_${feedbackRecord.Id}.docx`;
+            const formData = new FormData();
+            formData.append("File", new File([output], fileName, {
+                type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            }));
+            formData.append("Id", feedbackRecord.Id);
+
+            const response = await axios.post(`${apiConfig.API_BASE_URL}/B8/themtailieufeedbackconfirm`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            if (response.status === 200) {
+                message.success({ content: "Xuất file DOCX và gửi phản hồi thành công!", key: "docx" });
+            } else {
+                message.error("Gửi phản hồi thất bại!");
+            }
+
+            messageApi.open({ type: 'success', content: `Xuất file DOCX thành công!` });
+            setIsModalSuaDoiOpen(false);
+        } catch (error) {
+            console.error("Lỗi khi tạo file DOCX:", error);
+            message.error("Có lỗi xảy ra, vui lòng thử lại!");
+        }
+    };
+
+    const handleSaveFile = async () => {
+        try {
+            const Id = gopY ? feedbackRecord_.Id : feedbackRecord.Id;
+            const fileResponse = await axios.get(
+                `${apiConfig.API_BASE_URL}/B8/viewWordConfirmTL?id=${Id}`,
+                { responseType: "blob" }
+            );
+
+            // Gợi ý: lấy tên file từ header nếu server có gửi
+            const contentDisposition = fileResponse.headers['content-disposition'];
+            let fileName = "Phieu-hoan-chinh.docx";
+            if (contentDisposition) {
+                const match = contentDisposition.match(/filename="?(.+)"?/);
+                if (match && match[1]) {
+                    fileName = decodeURIComponent(match[1]);
+                }
+            }
+
+            saveAs(fileResponse.data, fileName);
+        } catch (error) {
+            message.error("Lỗi khi tải file phản hồi!");
+            console.error(error);
+        }
+    };
+
+    const handleViewFeedbackDetails = (TaiLieuId, TenTaiLieu) => {
+        // Lấy tất cả các dòng có cùng QuyTrinhId được chọn
+        const details = dataFeedback.filter(item => item.TaiLieuId === TaiLieuId);
+        const details_ = dataFeedback_.filter(item => item.TaiLieuId === TaiLieuId);
+        setModalFeedbackData(details);
+        setModalFeedbackData_(details_);
+        setModalFeedbackTitle(TenTaiLieu);
+        // setModalTitleId(QuyTrinhId);
+        setModalFeedbackVisible(true);
+    };
     const isEditing = (record) => record.SanPhamId === editingKey;
 
     const edit = (record) => {
@@ -122,11 +253,11 @@ const Admin_SP = () => {
     const cancel = () => {
         setEditingKey("");
     };
-
+    const containerRef = useRef(null);
     const save = async (key) => {
         try {
             const row = await formEdit.validateFields();
-            const updatedData = { ...row, SanPhamId: key };
+            const updatedData = { ...row, SanPhamId: key, KhachHang: "DEK" };
             console.log(updatedData)
             const response = await axios.put(`${apiConfig.API_BASE_URL}/B8/capnhatsanpham`, updatedData);
             if (response.status === 200) {
@@ -218,6 +349,149 @@ const Admin_SP = () => {
                     content: `Lỗi xem PDF: ${error.message}`,
                 });
             }
+        }
+    };
+
+    const handleViewWord = async (record) => {
+        setFeedbackRecord(record);
+        if (!record?.Id) {
+            messageApi.open({
+                type: 'error',
+                content: `Không có file Word để xem!`,
+            });
+            return;
+        }
+        setDataFeedback((prevData) =>
+            prevData.map((item) =>
+                item.Id === record.Id
+                    ? {
+                        ...item,
+                        TrangThai: "Đã xem",
+                    }
+                    : item
+            )
+        );
+        setModalFeedbackData((prevData) =>
+            prevData.map((item) =>
+                item.Id === record.Id
+                    ? {
+                        ...item,
+                        TrangThai: "Đã xem",
+                    }
+                    : item
+            )
+        );
+        try {
+            const response = await axios.get(
+                `${apiConfig.API_BASE_URL}/B8/viewWordTL?id=${record.Id}`,
+                { responseType: "blob" }
+            );
+
+            if (response.status === 200) {
+                setVisible(true);
+                const arrayBuffer = await response.data.arrayBuffer();
+
+                if (containerRef.current) {
+                    containerRef.current.innerHTML = ""; // Clear cũ
+                    await renderAsync(arrayBuffer, containerRef.current);
+                    // Hiện modal sau khi render
+                }
+            } else {
+                message.error("Không lấy được file Word!");
+            }
+        } catch (error) {
+            message.error(`Lỗi xem file Word: ${error.message}`);
+        }
+    };
+    const handleViewWord_ = async (record) => {
+        setGopY(true)
+        setFeedbackRecord_(record);
+        if (!record?.Id) {
+            messageApi.open({
+                type: 'error',
+                content: `Không có file Word để xem!`,
+            });
+            return;
+        }
+        setDataFeedback_((prevData) =>
+            prevData.map((item) =>
+                item.Id === record.Id
+                    ? {
+                        ...item,
+                        TrangThai: "Đã xem",
+                    }
+                    : item
+            )
+        );
+        setModalFeedbackData_((prevData) =>
+            prevData.map((item) =>
+                item.Id === record.Id
+                    ? {
+                        ...item,
+                        TrangThai: "Đã xem",
+                    }
+                    : item
+            )
+        );
+        try {
+            const response = await axios.get(
+                `${apiConfig.API_BASE_URL}/B8/viewWordTL?id=${record.Id}`,
+                { responseType: "blob" }
+            );
+
+            if (response.status === 200) {
+                setVisible(true);
+                const arrayBuffer = await response.data.arrayBuffer();
+
+                if (containerRef.current) {
+                    containerRef.current.innerHTML = ""; // Clear cũ
+                    await renderAsync(arrayBuffer, containerRef.current);
+                    // Hiện modal sau khi render
+                }
+            } else {
+                message.error("Không lấy được file Word!");
+            }
+        } catch (error) {
+            message.error(`Lỗi xem file Word: ${error.message}`);
+        }
+    };
+
+    const handleViewWord_confirm = async (record) => {
+        setFeedbackRecord(record);
+        if (!record?.Id) {
+            messageApi.open({
+                type: 'error',
+                content: `Không có file Word để xem!`,
+            });
+            return;
+        }
+
+        try {
+            const response = await axios.get(
+                `${apiConfig.API_BASE_URL}/B8/viewWordConfirmTL?id=${record.Id}`,
+                { responseType: "blob" }
+            );
+
+            if (response.status === 200) {
+                setVisible(true);
+                const arrayBuffer = await response.data.arrayBuffer();
+
+                if (containerRef.current) {
+                    containerRef.current.innerHTML = ""; // Clear cũ
+                    await renderAsync(arrayBuffer, containerRef.current);
+                    // Hiện modal sau khi render
+                }
+            } else {
+                messageApi.open({
+                    type: 'error',
+                    content: `Chưa có ý kiến của bộ phân ban hành!`,
+                });
+            }
+        } catch (error) {
+            messageApi.open({
+                type: 'warning',
+                content: `Chưa có ý kiến của bộ phân ban hành!`,
+            });
         }
     };
 
@@ -476,12 +750,6 @@ const Admin_SP = () => {
 
     const columns = [
         {
-            title: "Khách hàng",
-            dataIndex: "KhachHang",
-            key: "KhachHang",
-            editable: true,
-        },
-        {
             title: "Dòng hàng",
             dataIndex: "DongHang",
             key: "DongHang",
@@ -679,7 +947,7 @@ const Admin_SP = () => {
                 ),
         },
         {
-            title: 'Chi Tiết',
+            title: 'Phiên bản khác',
             key: 'action',
             align: "center",
             render: (text, record) => (
@@ -688,6 +956,19 @@ const Admin_SP = () => {
                     onClick={(e) => { e.stopPropagation(); handleViewDetails(record.TenTaiLieu, record.TenSanPham, record.ItemCode) }}
                 >
                     Xem
+                </Button>
+            ),
+        },
+        {
+            title: 'Phản hồi',
+            key: 'action',
+            align: "center",
+            render: (text, record) => (
+                <Button
+                    type="primary"
+                    onClick={(e) => { e.stopPropagation(); handleViewFeedbackDetails(record.TaiLieuId, record.TenTaiLieu); }}
+                >
+                    Phản hồi
                 </Button>
             ),
         },
@@ -732,6 +1013,7 @@ const Admin_SP = () => {
     // Hàm lấy dữ liệu từ API khi component mount
     useEffect(() => {
         fetchData();
+        fetchDataFeedback();
     }, []);
 
     // Hàm lọc để lấy phiên bản mới nhất cho mỗi QuyTrinh (theo SanPhamId)
@@ -898,7 +1180,7 @@ const Admin_SP = () => {
                 ),
         },
         {
-            title: 'Chi Tiết',
+            title: 'Trạng thái các bộ phận',
             key: 'action',
             align: "center",
             render: (text, record) => (
@@ -907,6 +1189,19 @@ const Admin_SP = () => {
                     onClick={(e) => { e.stopPropagation(); handleViewStatus(record); }}
                 >
                     Xem tất cả
+                </Button>
+            ),
+        },
+        {
+            title: 'Phản hồi',
+            key: 'action',
+            align: "center",
+            render: (text, record) => (
+                <Button
+                    type="primary"
+                    onClick={(e) => { e.stopPropagation(); handleViewFeedbackDetails(record.TaiLieuId, record.TenTaiLieu); }}
+                >
+                    Phản hồi
                 </Button>
             ),
         },
@@ -1042,7 +1337,7 @@ const Admin_SP = () => {
                     onCancel={() => setModalVisible(false)}
                     footer={null}
                     className={style.modalVersions}
-                    width="80%"
+                    width="90%"
                 >
                     <Card style={{ backgroundColor: '', border: 'none' }}>
                         <Tabs defaultActiveKey="1" className={style.customTabs}>
@@ -1097,7 +1392,7 @@ const Admin_SP = () => {
                         </Button>
                     ]}
                     className={style.modalVersions}
-                    width="80%"
+                    width="90%"
                 >
                     <Table
                         dataSource={modalVersionData}
@@ -1232,7 +1527,7 @@ const Admin_SP = () => {
                     title="Trạng thái người nhận"
                     open={statusModalVisible}
                     onCancel={() => setStatusModalVisible(false)}
-                    width="80%"
+                    width="90%"
                     footer={[
                         <Button key="close" onClick={() => setStatusModalVisible(false)}>
                             Đóng
@@ -1382,6 +1677,157 @@ const Admin_SP = () => {
                     </Form>
 
                 </Modal>
+                <Modal
+                    className={style.modalVersions}
+                    title="Yêu cầu sửa đổi, góp ý"
+                    open={modalFeedbackVisible}
+                    onCancel={() => setModalFeedbackVisible(false)}
+                    width="90%"
+                    footer={[
+                        <Button key="close" onClick={() => setModalFeedbackVisible(false)}>
+                            Đóng
+                        </Button>
+                    ]}
+                >
+                    <Tabs defaultActiveKey="1" className={style.customTabs}>
+                        <Tabs.TabPane
+                            tab={`Yêu cầu sửa đổi`}
+                            key="1"
+                        >
+                            <Table
+                                dataSource={modalFeedbackData}
+                                className={style.tableVersions}
+                                scroll={{ y: 55 * 9 }}
+                                rowClassName={(record) => record.TrangThai === 'Chưa xem' ? style.notViewed : ''}
+                                onRow={(record) => ({
+                                    onClick: (event) => {
+                                        handleViewWord(record);
+                                    },
+                                })}
+                                columns={[
+                                    {
+                                        title: 'Bộ phận',
+                                        dataIndex: 'BoPhan', // Điều chỉnh key nếu tên field khác (vd: 'Chức vụ')
+                                        key: 'BoPhan',
+                                        align: 'center',
+                                    },
+                                    {
+                                        title: 'Trạng thái',
+                                        dataIndex: 'TrangThai',
+                                        key: 'TrangThai',
+                                        align: 'center',
+                                    },
+                                    {
+                                        title: 'Ngày phản hồi',
+                                        dataIndex: 'FilePath',
+                                        key: 'NgayPhanHoi',
+                                        align: 'center',
+                                        render: (text) => {
+                                            const match = text.match(/_(\d+)\.docx$/); // Tìm số timestamp
+                                            if (match) {
+                                                const timestamp = parseInt(match[1], 10);
+                                                const date = new Date(timestamp);
+                                                // Định dạng ngày theo múi giờ Việt Nam
+                                                return date.toLocaleDateString('vi-VN', {
+                                                    timeZone: 'Asia/Ho_Chi_Minh',
+                                                    day: '2-digit',
+                                                    month: '2-digit',
+                                                    year: 'numeric',
+                                                });
+                                            }
+                                            return 'Không xác định';
+                                        }
+                                    },
+                                    {
+                                        title: 'Ghi chú',
+                                        key: 'GhiChu',
+                                        align: 'center',
+                                        render: (_, record) => {
+                                            return (
+                                                <Button
+                                                    type="primary"
+                                                    onClick={(e) => { e.stopPropagation(); handleViewWord_confirm(record) }}
+                                                >
+                                                    Phiếu xác nhận
+                                                </Button>
+                                            );
+                                        }
+                                    }
+                                ]}
+                                rowKey={(record, index) => `${record.Id}_${index}`}
+                                pagination={false}
+                            />
+                        </Tabs.TabPane>
+                        <Tabs.TabPane
+                            tab={`Góp ý`}
+                            key="2"
+                        >
+                            <Table
+                                dataSource={modalFeedbackData_}
+                                className={style.tableVersions}
+                                scroll={{ y: 55 * 9 }}
+                                rowClassName={(record) => record.TrangThai === 'Chưa xem' ? style.notViewed : ''}
+                                onRow={(record) => ({
+                                    onClick: (event) => {
+                                        handleViewWord_(record);
+                                    },
+                                })}
+                                columns={[
+                                    {
+                                        title: 'Bộ phận',
+                                        dataIndex: 'BoPhan', // Điều chỉnh key nếu tên field khác (vd: 'Chức vụ')
+                                        key: 'BoPhan',
+                                        align: 'center',
+                                    },
+                                    {
+                                        title: 'Trạng thái',
+                                        dataIndex: 'TrangThai',
+                                        key: 'TrangThai',
+                                        align: 'center',
+                                    },
+                                    {
+                                        title: 'Ngày phản hồi',
+                                        dataIndex: 'FilePath_',
+                                        key: 'NgayPhanHoi_',
+                                        align: 'center',
+                                        render: (text) => {
+                                            const match = text.match(/_(\d+)\.docx$/); // Tìm số timestamp
+                                            if (match) {
+                                                const timestamp = parseInt(match[1], 10);
+                                                const date = new Date(timestamp);
+                                                // Định dạng ngày theo múi giờ Việt Nam
+                                                return date.toLocaleDateString('vi-VN', {
+                                                    timeZone: 'Asia/Ho_Chi_Minh',
+                                                    day: '2-digit',
+                                                    month: '2-digit',
+                                                    year: 'numeric',
+                                                });
+                                            }
+                                            return 'Không xác định';
+                                        }
+                                    },
+                                    {
+                                        title: 'Ghi chú',
+                                        key: 'GhiChu',
+                                        align: 'center',
+                                        render: (_, record) => {
+                                            return (
+                                                <Button
+                                                    type="primary"
+                                                    onClick={(e) => { e.stopPropagation(); handleViewWord_confirm(record) }}
+                                                >
+                                                    Phiếu xác nhận
+                                                </Button>
+                                            );
+                                        }
+                                    }
+                                ]}
+                                rowKey={(record, index) => `${record.Id}_${index}`}
+                                pagination={false}
+                            />
+                        </Tabs.TabPane>
+                    </Tabs>
+                </Modal>
                 {pdfVisible && (
                     <ViewerPDF
                         fileUrl={pdfUrl}
@@ -1399,6 +1845,58 @@ const Admin_SP = () => {
                         onComment={handleOpenCommentModal}
                     />
                 )}
+                <Modal
+                    title="Phản hồi"
+                    open={visible}
+                    onCancel={() => { setVisible(false); setGopY(false) }}
+                    footer={[
+                        // <Button type="primary" danger onClick={handleSaveFile}>
+                        //     Xóa
+                        // </Button>,
+                        <Button onClick={handleSaveFile}>
+                            Xuất
+                        </Button>,
+                        (gopY == false) && (
+                            <Button type="primary" onClick={handleOpenSuaDoiModal}>
+                                Ý kiến của BPQLHT
+                            </Button>
+                        )
+                    ]}
+                    width={1000}
+                >
+                    <div
+                        ref={containerRef}
+                        style={{
+                            border: "1px solid #ccc",
+                            // maxHeight: "800px",
+                            overflowY: "auto",
+                            background: "#fff",
+                        }}
+                    />
+                </Modal>
+                <Modal
+                    title="Nhập Dữ Liệu Tạo DOCX"
+                    open={isModalSuaDoiOpen}
+                    onCancel={() => setIsModalSuaDoiOpen(false)}
+                    footer={null}
+                    width={800}
+                >
+                    <Form form={formSuaDoi} layout="vertical" onFinish={handleGenerate}>
+
+                        <Form.Item label="Ý kiến của Bộ phận Quản lý hệ thống" name="YKienBoPhanQuanLy">
+                            <Input.TextArea />
+                        </Form.Item>
+                        <Form.Item label="Chữ ký (ghi rõ họ tên) của Bộ phận Quản lý hệ thống" name="ChuKyBoPhanQuanLy">
+                            <Input />
+                        </Form.Item>
+
+                        <Form.Item>
+                            <Button type="primary" htmlType="submit">
+                                Tạo DOCX
+                            </Button>
+                        </Form.Item>
+                    </Form>
+                </Modal>
             </Content>
         </Layout>
     );

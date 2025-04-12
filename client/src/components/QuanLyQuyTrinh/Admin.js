@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
     Row,
     Col,
     Input,
-    Table,
+    Table, Tabs,
     Spin,
     message,
     Button,
@@ -23,12 +23,23 @@ import { UploadOutlined, SettingOutlined, UserOutlined } from '@ant-design/icons
 import axios from 'axios';
 import dayjs from 'dayjs';
 import apiConfig from '../../apiConfig.json';
+import PizZip from "pizzip";
+import Docxtemplater from "docxtemplater";
+import { saveAs } from "file-saver";
 import ViewerPDF from './ViewerPDF';
+import { renderAsync } from "docx-preview";
 import { Link, useHistory } from "react-router-dom";
 import style from "./Admin.module.css";
+import ViewerWordOrPdf from './ViewerWordOrPdf';
+
+const loadFile = async (url) => {
+    const response = await fetch(url);
+    return response.arrayBuffer();
+};
 
 const { Search } = Input;
 const { Header, Content } = Layout;
+
 
 const EditableRow = ({ index, ...props }) => {
     const [form] = Form.useForm();
@@ -110,15 +121,26 @@ const AppHeader = () => {
 const Admin = () => {
     const [allData, setAllData] = useState([]); // tất cả phiên bản của các quy trình
     const [data, setData] = useState([]);         // phiên bản mới nhất của mỗi quy trình
+    const [dataFeedback, setDataFeedback] = useState([]);
+    const [dataFeedback_, setDataFeedback_] = useState([]);
+
     const [allProcessNames, setAllProcessNames] = useState([]);
     const [allProcessNames_, setAllProcessNames_] = useState([]);
     const [loading, setLoading] = useState(false);
 
     const [modalVisible, setModalVisible] = useState(false);
     const [prevModalVisible, setPrevModalVisible] = useState(false);
-    const [modalData, setModalData] = useState([]); // dữ liệu các version của quy trình được chọn (mỗi phiên bản duy nhất)
-    const [modalTitle, setModalTitle] = useState(''); // tên quy trình được chọn
+    const [modalData, setModalData] = useState([]);
+    const [modalTitle, setModalTitle] = useState('');
     const [modalTitleId, setModalTitleId] = useState(''); // id quy trình được chọn
+
+    const [modalFeedbackData, setModalFeedbackData] = useState([]);
+    const [modalFeedbackTitle, setModalFeedbackTitle] = useState('');
+    const [modalFeedbackVisible, setModalFeedbackVisible] = useState(false);
+    const [modalFeedbackData_, setModalFeedbackData_] = useState([]);
+    const [modalFeedbackTitle_, setModalFeedbackTitle_] = useState('');
+    const [modalFeedbackVisible_, setModalFeedbackVisible_] = useState(false);
+
 
     const [form] = Form.useForm();
     const [processForm] = Form.useForm();
@@ -132,6 +154,10 @@ const Admin = () => {
     const [file, setFile] = useState(null);
     const [pdfVisible, setPdfVisible] = useState(false);
     const [pdfUrl, setPdfUrl] = useState('');
+
+    const [wordUrl, setWordUrl] = useState(null);
+    const [wordVisible, setWordVisible] = useState(false);
+
     const [selectedProcess, setSelectedProcess] = useState(null);
     const [selectedProcess_, setSelectedProcess_] = useState(null);
     const [selectedBoPhan, setSelectedBoPhan] = useState([]);
@@ -140,14 +166,102 @@ const Admin = () => {
     const [isCommentModalVisible, setIsCommentModalVisible] = useState(false);
     const [currentRecord, setCurrentRecord] = useState(null);
     const [comment, setComment] = useState('');
-
+    const [feedbackRecord, setFeedbackRecord] = useState(null);
+    const [feedbackRecord_, setFeedbackRecord_] = useState(null);
+    const [gopY, setGopY] = useState(false)
     // Modal trạng thái người dùng của 1 version
     const [statusModalVisible, setStatusModalVisible] = useState(false);
     const [statusData, setStatusData] = useState([]);
 
     const [messageApi, contextHolder] = message.useMessage();
     const role = localStorage.getItem('role');
+    const [visible, setVisible] = useState(false);
 
+    const [isModalSuaDoiOpen, setIsModalSuaDoiOpen] = useState(false);
+    const [formSuaDoi] = Form.useForm();
+
+    //xử lý cái sửa đổi hóp Ý
+    const handleOpenSuaDoiModal = () => {
+        formSuaDoi.resetFields();
+        setIsModalSuaDoiOpen(true);
+    };
+    const handleGenerate = async (values) => {
+        try {
+            message.loading({ content: "Đang tạo file...", key: "docx" });
+            console.log(feedbackRecord)
+            const finalData = {
+                ...values,
+                NgayYKienBoPhanQuanLy: dayjs().format("DD/MM/YYYY"),
+            };
+
+            // Tải file template từ server (ví dụ: file vừa view trước đó)
+            const fileResponse = await axios.get(`${apiConfig.API_BASE_URL}/B8/viewWord?id=${feedbackRecord.Id}`, {
+                responseType: "blob"
+            });
+
+            const arrayBuffer = await fileResponse.data.arrayBuffer();
+            const zip = new PizZip(arrayBuffer);
+
+            const doc = new Docxtemplater(zip, {
+                paragraphLoop: true,
+                linebreaks: true,
+            });
+
+            doc.setData(finalData);
+            doc.render();
+
+            const output = doc.getZip().generate({ type: "blob" });
+            saveAs(output, "output.docx");
+            const fileName = `XacNhan_${feedbackRecord.MaSo}_${feedbackRecord.Id}.docx`;
+            const formData = new FormData();
+            formData.append("File", new File([output], fileName, {
+                type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            }));
+            formData.append("Id", feedbackRecord.Id);
+
+            const response = await axios.post(`${apiConfig.API_BASE_URL}/B8/themquytrinhfeedbackconfirm`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            if (response.status === 200) {
+                message.success({ content: "Xuất file DOCX và gửi phản hồi thành công!", key: "docx" });
+            } else {
+                message.error("Gửi phản hồi thất bại!");
+            }
+
+            messageApi.open({ type: 'success', content: `Xuất file DOCX thành công!` });
+            setIsModalSuaDoiOpen(false);
+        } catch (error) {
+            console.error("Lỗi khi tạo file DOCX:", error);
+            message.error("Có lỗi xảy ra, vui lòng thử lại!");
+        }
+    };
+
+    const handleSaveFile = async () => {
+        try {
+            const Id = gopY ? feedbackRecord_.Id : feedbackRecord.Id;
+            const fileResponse = await axios.get(
+                `${apiConfig.API_BASE_URL}/B8/viewWordConfirm?id=${Id}`,
+                { responseType: "blob" }
+            );
+
+            // Gợi ý: lấy tên file từ header nếu server có gửi
+            const contentDisposition = fileResponse.headers['content-disposition'];
+            let fileName = "Phieu-hoan-chinh.docx";
+            if (contentDisposition) {
+                const match = contentDisposition.match(/filename="?(.+)"?/);
+                if (match && match[1]) {
+                    fileName = decodeURIComponent(match[1]);
+                }
+            }
+
+            saveAs(fileResponse.data, fileName);
+        } catch (error) {
+            message.error("Lỗi khi tải file phản hồi!");
+            console.error(error);
+        }
+    };
+    //xử lý sử
     const isEditing = (record) => record.QuyTrinhId === editingKey;
     const isEditing_ = (record) => record.QuyTrinhVersionId === editingKey_;
 
@@ -155,7 +269,7 @@ const Admin = () => {
         formEdit.setFieldsValue({ ...record });
         setEditingKey(record.QuyTrinhId);
     };
-
+    const containerRef = useRef(null);
     const cancel = () => {
         setEditingKey("");
     };
@@ -207,9 +321,10 @@ const Admin = () => {
     const handleConfirmComment = async () => {
         try {
             const userId = localStorage.getItem('userId');
+            console.log(currentRecord.QuyTrinhVersionId)
             await axios.post(`${apiConfig.API_BASE_URL}/B8/markAsViewed`, {
                 NguoiDungId: parseInt(userId),
-                QuyTrinhVersionId: currentRecord.VersionId,
+                QuyTrinhVersionId: currentRecord.QuyTrinhVersionId,
                 NhanXet: comment
             });
             messageApi.open({ type: 'success', content: `Đã đánh dấu tài liệu là đã xem và ghi nhận nhận xét!` });
@@ -255,7 +370,6 @@ const Admin = () => {
 
                 return 0; // Giữ nguyên vị trí nếu không phải B1 - B9
             });
-            console.log(names)
             setAllProcessNames(names);
         } catch (error) {
             messageApi.open({
@@ -271,6 +385,27 @@ const Admin = () => {
             setAllProcessNames_(allNames);
         }
     };
+
+
+    const fetchDataFeedback = async () => {
+        try {
+            const res = await axios.get(`${apiConfig.API_BASE_URL}/B8/quytrinhfeedback`);
+            const list = res.data;
+
+            // Lọc theo FilePath và FilePath_
+            const withFilePath = list.filter(item => item.FilePath_ == null);
+            const withoutFilePath_ = list.filter(item => item.FilePath == null);
+            console.log(withoutFilePath_)
+            setDataFeedback(withFilePath);
+            setDataFeedback_(withoutFilePath_);
+        } catch (error) {
+            messageApi.open({
+                type: 'error',
+                content: `Lỗi lấy dữ liệu`,
+            });
+        }
+    };
+
 
     // Khi người dùng click vào 1 hàng, mở PDF ngay lập tức
     const handleViewPdf = async (record) => {
@@ -297,6 +432,148 @@ const Admin = () => {
         }
     };
 
+    const handleViewWord = async (record) => {
+        setFeedbackRecord(record);
+        if (!record?.Id) {
+            messageApi.open({
+                type: 'error',
+                content: `Không có file Word để xem!`,
+            });
+            return;
+        }
+        setDataFeedback((prevData) =>
+            prevData.map((item) =>
+                item.Id === record.Id
+                    ? {
+                        ...item,
+                        TrangThai: "Đã xem",
+                    }
+                    : item
+            )
+        );
+        setModalFeedbackData((prevData) =>
+            prevData.map((item) =>
+                item.Id === record.Id
+                    ? {
+                        ...item,
+                        TrangThai: "Đã xem",
+                    }
+                    : item
+            )
+        );
+        try {
+            const response = await axios.get(
+                `${apiConfig.API_BASE_URL}/B8/viewWord?id=${record.Id}`,
+                { responseType: "blob" }
+            );
+
+            if (response.status === 200) {
+                setVisible(true);
+                const arrayBuffer = await response.data.arrayBuffer();
+
+                if (containerRef.current) {
+                    containerRef.current.innerHTML = ""; // Clear cũ
+                    await renderAsync(arrayBuffer, containerRef.current);
+                    // Hiện modal sau khi render
+                }
+            } else {
+                message.error("Không lấy được file Word!");
+            }
+        } catch (error) {
+            message.error(`Lỗi xem file Word: ${error.message}`);
+        }
+    };
+    const handleViewWord_ = async (record) => {
+        setGopY(true)
+        setFeedbackRecord_(record);
+        if (!record?.Id) {
+            messageApi.open({
+                type: 'error',
+                content: `Không có file Word để xem!`,
+            });
+            return;
+        }
+        setDataFeedback_((prevData) =>
+            prevData.map((item) =>
+                item.Id === record.Id
+                    ? {
+                        ...item,
+                        TrangThai: "Đã xem",
+                    }
+                    : item
+            )
+        );
+        setModalFeedbackData_((prevData) =>
+            prevData.map((item) =>
+                item.Id === record.Id
+                    ? {
+                        ...item,
+                        TrangThai: "Đã xem",
+                    }
+                    : item
+            )
+        );
+        try {
+            const response = await axios.get(
+                `${apiConfig.API_BASE_URL}/B8/viewWord?id=${record.Id}`,
+                { responseType: "blob" }
+            );
+
+            if (response.status === 200) {
+                setVisible(true);
+                const arrayBuffer = await response.data.arrayBuffer();
+
+                if (containerRef.current) {
+                    containerRef.current.innerHTML = ""; // Clear cũ
+                    await renderAsync(arrayBuffer, containerRef.current);
+                    // Hiện modal sau khi render
+                }
+            } else {
+                message.error("Không lấy được file Word!");
+            }
+        } catch (error) {
+            message.error(`Lỗi xem file Word: ${error.message}`);
+        }
+    };
+
+    const handleViewWord_confirm = async (record) => {
+        setFeedbackRecord(record);
+        if (!record?.Id) {
+            messageApi.open({
+                type: 'error',
+                content: `Không có file Word để xem!`,
+            });
+            return;
+        }
+
+        try {
+            const response = await axios.get(
+                `${apiConfig.API_BASE_URL}/B8/viewWordConfirm?id=${record.Id}`,
+                { responseType: "blob" }
+            );
+
+            if (response.status === 200) {
+                setVisible(true);
+                const arrayBuffer = await response.data.arrayBuffer();
+
+                if (containerRef.current) {
+                    containerRef.current.innerHTML = ""; // Clear cũ
+                    await renderAsync(arrayBuffer, containerRef.current);
+                    // Hiện modal sau khi render
+                }
+            } else {
+                messageApi.open({
+                    type: 'error',
+                    content: `Chưa có ý kiến của bộ phân ban hành!`,
+                });
+            }
+        } catch (error) {
+            messageApi.open({
+                type: 'warning',
+                content: `Chưa có ý kiến của bộ phân ban hành!`,
+            });
+        }
+    };
     // Xử lý submit form thêm quy trình mới
     const handleAddProcess = async () => {
         try {
@@ -328,7 +605,7 @@ const Admin = () => {
             // Cập nhật trạng thái ngay trong state
             setStatusData((prevData) =>
                 prevData.map((item) =>
-                    item.VersionId === record.VersionId && item.BoPhan === record.BoPhan
+                    item.QuyTrinhVersionId === record.QuyTrinhVersionId && item.BoPhan === record.BoPhan
                         ? { ...item, BoPhanGui: item.BoPhanGui ? `${item.BoPhanGui},${record.BoPhan}` : record.BoPhan }
                         : item
                 )
@@ -529,6 +806,19 @@ const Admin = () => {
                 </Button>
             ),
         },
+        {
+            title: 'Chi Tiết',
+            key: 'action',
+            align: "center",
+            render: (text, record) => (
+                <Button
+                    type="primary"
+                    onClick={(e) => { e.stopPropagation(); handleViewFeedbackDetails(record.QuyTrinhVersionId, record.TenQuyTrinh); }}
+                >
+                    Phản hồi
+                </Button>
+            ),
+        },
         ...(role === "admin"
             ? [
                 {
@@ -549,32 +839,32 @@ const Admin = () => {
                         </Popconfirm>
                     ),
                 },
-                {
-                    title: "",
-                    key: "edit",
-                    align: "center",
-                    render: (_, record) => {
-                        const editable = isEditing(record);
-                        return editable ? (
-                            <span>
-                                <Button
-                                    type="link"
-                                    onClick={(e) => { e.stopPropagation() }}
-                                    style={{ marginRight: 8 }}
-                                >
-                                    Lưu
-                                </Button>
-                                <Popconfirm title="Hủy chỉnh sửa?" onConfirm={(e) => { e.stopPropagation(); cancel() }} onCancel={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation() }}>
-                                    <Button type="link">Hủy</Button>
-                                </Popconfirm>
-                            </span>
-                        ) : (
-                            <Button type="link" disabled={editingKey !== ""} onClick={(e) => { e.stopPropagation(); edit(record) }}>
-                                Chỉnh sửa
-                            </Button>
-                        );
-                    },
-                },
+                // {
+                //     title: "",
+                //     key: "edit",
+                //     align: "center",
+                //     render: (_, record) => {
+                //         const editable = isEditing(record);
+                //         return editable ? (
+                //             <span>
+                //                 <Button
+                //                     type="link"
+                //                     onClick={(e) => { e.stopPropagation() }}
+                //                     style={{ marginRight: 8 }}
+                //                 >
+                //                     Lưu
+                //                 </Button>
+                //                 <Popconfirm title="Hủy chỉnh sửa?" onConfirm={(e) => { e.stopPropagation(); cancel() }} onCancel={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation() }}>
+                //                     <Button type="link">Hủy</Button>
+                //                 </Popconfirm>
+                //             </span>
+                //         ) : (
+                //             <Button type="link" disabled={editingKey !== ""} onClick={(e) => { e.stopPropagation(); edit(record) }}>
+                //                 Chỉnh sửa
+                //             </Button>
+                //         );
+                //     },
+                // },
             ]
             : []),
     ];
@@ -596,6 +886,7 @@ const Admin = () => {
     // Hàm lấy dữ liệu từ API khi component mount
     useEffect(() => {
         fetchData();
+        fetchDataFeedback();
     }, []);
     useEffect(() => {
         if (modalTitleId) {
@@ -684,6 +975,17 @@ const Admin = () => {
         setModalTitle(TenQuyTrinh);
         setModalTitleId(QuyTrinhId);
         setModalVisible(true);
+    };
+
+    const handleViewFeedbackDetails = (QuyTrinhVersionId, TenQuyTrinh) => {
+        // Lấy tất cả các dòng có cùng QuyTrinhId được chọn
+        const details = dataFeedback.filter(item => item.QuyTrinhVersionId === QuyTrinhVersionId);
+        const details_ = dataFeedback_.filter(item => item.QuyTrinhVersionId === QuyTrinhVersionId);
+        setModalFeedbackData(details);
+        setModalFeedbackData_(details_);
+        setModalFeedbackTitle(TenQuyTrinh);
+        // setModalTitleId(QuyTrinhId);
+        setModalFeedbackVisible(true);
     };
 
     const handleSelectProcess = (value) => {
@@ -791,6 +1093,19 @@ const Admin = () => {
                 </Button>
             ),
         },
+        {
+            title: 'Chi Tiết',
+            key: 'action',
+            align: "center",
+            render: (text, record) => (
+                <Button
+                    type="primary"
+                    onClick={(e) => { e.stopPropagation(); handleViewFeedbackDetails(record.QuyTrinhVersionId, record.TenQuyTrinh); }}
+                >
+                    Phản hồi
+                </Button>
+            ),
+        },
         ...(role === "admin"
             ? [
                 {
@@ -854,14 +1169,13 @@ const Admin = () => {
                 editing: isEditing_(record),
             }),
         };
-    });
-    console.log(isEditing_)
-    // Hàm mở Modal trạng thái (danh sách người dùng cho version được chọn)
+    })
+
     const handleViewStatus = (record) => {
         // Kiểm tra nếu BoPhanGui bị null hoặc undefined thì gán mảng rỗng []
         const boPhanGuiArray = record.BoPhanGui ? record.BoPhanGui.split(',') : [];
 
-        // Lọc dữ liệu dựa trên VersionId và BoPhan có trong BoPhanGui
+        // Lọc dữ liệu dựa trên QuyTrinhVersionId và BoPhan có trong BoPhanGui
         const usersData = allData.filter(item =>
             item.QuyTrinhVersionId === record.QuyTrinhVersionId &&
             // (boPhanGuiArray.length === 0 || boPhanGuiArray.includes(item.BoPhan)) && 
@@ -915,13 +1229,18 @@ const Admin = () => {
                             />
                         </Card>
                     </Col>
-                    <Col xs={24} sm={4}>
-                        <Card style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)" }}>
-                            <div style={{ display: 'flex', justifyContent: 'center' }}>
-                                <Button type="primary" onClick={() => setAddProcessModalVisible(true)}>Thêm quy trình mới</Button>
-                            </div>
-                        </Card>
-                    </Col>
+                    {(role === "admin" || role === "admin_QuyTrinh") && (
+                        <Col xs={24} sm={4}>
+                            <Card style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)" }}>
+                                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                    <Button type="primary" onClick={() => setAddProcessModalVisible(true)}>
+                                        Thêm quy trình mới
+                                    </Button>
+                                </div>
+                            </Card>
+                        </Col>
+                    )}
+
                     {/* Bảng phiên bản mới nhất */}
                     <Col xs={24} sm={24}>
 
@@ -959,24 +1278,26 @@ const Admin = () => {
                 {/* --- Modal "Xem tất cả các phiên bản" --- */}
                 <Modal
                     title={modalTitle}
-                    visible={modalVisible}
+                    open={modalVisible}
                     onCancel={() => setModalVisible(false)}
                     footer={[
-                        <Button key="add" type="primary" onClick={() => setAddVersionModalVisible(true)}>
-                            Thêm phiên bản
-                        </Button>,
+                        (role === "admin" || role === "admin_QuyTrinh") && (
+                            <Button key="add" type="primary" onClick={() => setAddVersionModalVisible(true)}>
+                                Thêm phiên bản
+                            </Button>
+                        ),
                         <Button key="close" onClick={() => setModalVisible(false)}>
                             Đóng
                         </Button>
                     ]}
                     className={style.modalVersions}
-                    width={1000}
+                    width="90%"
                 >
                     <Form form={formEdit_} component={false}>
                         <Table
                             dataSource={modalData}
                             columns={mergedModalVersionColumns}
-                            rowKey="VersionId"
+                            rowKey="QuyTrinhVersionId"
                             pagination={false}
                             className={style.tableVersions}
                             scroll={{ y: 55 * 9 }}
@@ -1001,7 +1322,7 @@ const Admin = () => {
                     {/* --- Modal Thêm Version --- */}
                     <Modal
                         title="Thêm Version Mới"
-                        visible={addVersionModalVisible}
+                        open={addVersionModalVisible}
                         onCancel={() => setAddVersionModalVisible(false)}
                         className={style.modalVersions}
                         footer={[
@@ -1095,7 +1416,7 @@ const Admin = () => {
                 <Modal
                     className={style.modalVersions}
                     title="Trạng thái người nhận"
-                    visible={statusModalVisible}
+                    open={statusModalVisible}
                     onCancel={() => setStatusModalVisible(false)}
                     width="90%"
                     footer={[
@@ -1178,13 +1499,164 @@ const Admin = () => {
                                 }
                             }
                         ]}
-                        rowKey={(record, index) => `${record.VersionId}_${index}`}
+                        rowKey={(record, index) => `${record.QuyTrinhVersionId}_${index}`}
                         pagination={false}
                     />
                 </Modal>
                 <Modal
+                    className={style.modalVersions}
+                    title="Yêu cầu sửa đổi, góp ý"
+                    open={modalFeedbackVisible}
+                    onCancel={() => setModalFeedbackVisible(false)}
+                    width="90%"
+                    footer={[
+                        <Button key="close" onClick={() => setModalFeedbackVisible(false)}>
+                            Đóng
+                        </Button>
+                    ]}
+                >
+                    <Tabs defaultActiveKey="1" className={style.customTabs}>
+                        <Tabs.TabPane
+                            tab={`Yêu cầu sửa đổi`}
+                            key="1"
+                        >
+                            <Table
+                                dataSource={modalFeedbackData}
+                                className={style.tableVersions}
+                                scroll={{ y: 55 * 9 }}
+                                rowClassName={(record) => record.TrangThai === 'Chưa xem' ? style.notViewed : ''}
+                                onRow={(record) => ({
+                                    onClick: (event) => {
+                                        handleViewWord(record);
+                                    },
+                                })}
+                                columns={[
+                                    {
+                                        title: 'Bộ phận',
+                                        dataIndex: 'BoPhan', // Điều chỉnh key nếu tên field khác (vd: 'Chức vụ')
+                                        key: 'BoPhan',
+                                        align: 'center',
+                                    },
+                                    {
+                                        title: 'Trạng thái',
+                                        dataIndex: 'TrangThai',
+                                        key: 'TrangThai',
+                                        align: 'center',
+                                    },
+                                    {
+                                        title: 'Ngày phản hồi',
+                                        dataIndex: 'FilePath',
+                                        key: 'NgayPhanHoi',
+                                        align: 'center',
+                                        render: (text) => {
+                                            const match = text.match(/_(\d+)\.docx$/); // Tìm số timestamp
+                                            if (match) {
+                                                const timestamp = parseInt(match[1], 10);
+                                                const date = new Date(timestamp);
+                                                // Định dạng ngày theo múi giờ Việt Nam
+                                                return date.toLocaleDateString('vi-VN', {
+                                                    timeZone: 'Asia/Ho_Chi_Minh',
+                                                    day: '2-digit',
+                                                    month: '2-digit',
+                                                    year: 'numeric',
+                                                });
+                                            }
+                                            return 'Không xác định';
+                                        }
+                                    },
+                                    {
+                                        title: 'Ghi chú',
+                                        key: 'GhiChu',
+                                        align: 'center',
+                                        render: (_, record) => {
+                                            return (
+                                                <Button
+                                                    type="primary"
+                                                    onClick={(e) => { e.stopPropagation(); handleViewWord_confirm(record) }}
+                                                >
+                                                    Phiếu xác nhận
+                                                </Button>
+                                            );
+                                        }
+                                    }
+                                ]}
+                                rowKey={(record, index) => `${record.Id}_${index}`}
+                                pagination={false}
+                            />
+                        </Tabs.TabPane>
+                        <Tabs.TabPane
+                            tab={`Góp ý`}
+                            key="2"
+                        >
+                            <Table
+                                dataSource={modalFeedbackData_}
+                                className={style.tableVersions}
+                                scroll={{ y: 55 * 9 }}
+                                rowClassName={(record) => record.TrangThai === 'Chưa xem' ? style.notViewed : ''}
+                                onRow={(record) => ({
+                                    onClick: (event) => {
+                                        handleViewWord_(record);
+                                    },
+                                })}
+                                columns={[
+                                    {
+                                        title: 'Bộ phận',
+                                        dataIndex: 'BoPhan', // Điều chỉnh key nếu tên field khác (vd: 'Chức vụ')
+                                        key: 'BoPhan',
+                                        align: 'center',
+                                    },
+                                    {
+                                        title: 'Trạng thái',
+                                        dataIndex: 'TrangThai',
+                                        key: 'TrangThai',
+                                        align: 'center',
+                                    },
+                                    {
+                                        title: 'Ngày phản hồi',
+                                        dataIndex: 'FilePath_',
+                                        key: 'NgayPhanHoi_',
+                                        align: 'center',
+                                        render: (text) => {
+                                            const match = text.match(/_(\d+)\.docx$/); // Tìm số timestamp
+                                            if (match) {
+                                                const timestamp = parseInt(match[1], 10);
+                                                const date = new Date(timestamp);
+                                                // Định dạng ngày theo múi giờ Việt Nam
+                                                return date.toLocaleDateString('vi-VN', {
+                                                    timeZone: 'Asia/Ho_Chi_Minh',
+                                                    day: '2-digit',
+                                                    month: '2-digit',
+                                                    year: 'numeric',
+                                                });
+                                            }
+                                            return 'Không xác định';
+                                        }
+                                    },
+                                    {
+                                        title: 'Ghi chú',
+                                        key: 'GhiChu',
+                                        align: 'center',
+                                        render: (_, record) => {
+                                            return (
+                                                <Button
+                                                    type="primary"
+                                                    onClick={(e) => { e.stopPropagation(); handleViewWord_confirm(record) }}
+                                                >
+                                                    Phiếu xác nhận
+                                                </Button>
+                                            );
+                                        }
+                                    }
+                                ]}
+                                rowKey={(record, index) => `${record.Id}_${index}`}
+                                pagination={false}
+                            />
+                        </Tabs.TabPane>
+                    </Tabs>
+                </Modal>
+                <Modal
                     title="Thêm Quy Trình Mới"
-                    visible={addProcessModalVisible}
+                    open={addProcessModalVisible}
                     onCancel={() => setAddProcessModalVisible(false)}
                     className={style.modalVersions}
                     footer={[
@@ -1235,6 +1707,58 @@ const Admin = () => {
                         onComment={handleOpenCommentModal}
                     />
                 )}
+                <Modal
+                    title="Phản hồi"
+                    open={visible}
+                    onCancel={() => { setVisible(false); setGopY(false) }}
+                    footer={[
+                        // <Button type="primary" danger onClick={handleSaveFile}>
+                        //     Xóa
+                        // </Button>,
+                        <Button onClick={handleSaveFile}>
+                            Xuất
+                        </Button>,
+                        (gopY == false) && (
+                            <Button type="primary" onClick={handleOpenSuaDoiModal}>
+                                Ý kiến của BPQLHT
+                            </Button>
+                        )
+                    ]}
+                    width={1000}
+                >
+                    <div
+                        ref={containerRef}
+                        style={{
+                            border: "1px solid #ccc",
+                            // maxHeight: "800px",
+                            overflowY: "auto",
+                            background: "#fff",
+                        }}
+                    />
+                </Modal>
+                <Modal
+                    title="Nhập Dữ Liệu Tạo DOCX"
+                    open={isModalSuaDoiOpen}
+                    onCancel={() => setIsModalSuaDoiOpen(false)}
+                    footer={null}
+                    width={800}
+                >
+                    <Form form={formSuaDoi} layout="vertical" onFinish={handleGenerate}>
+
+                        <Form.Item label="Ý kiến của Bộ phận Quản lý hệ thống" name="YKienBoPhanQuanLy">
+                            <Input.TextArea />
+                        </Form.Item>
+                        <Form.Item label="Chữ ký (ghi rõ họ tên) của Bộ phận Quản lý hệ thống" name="ChuKyBoPhanQuanLy">
+                            <Input />
+                        </Form.Item>
+
+                        <Form.Item>
+                            <Button type="primary" htmlType="submit">
+                                Tạo DOCX
+                            </Button>
+                        </Form.Item>
+                    </Form>
+                </Modal>
             </Content>
         </Layout>
     );
