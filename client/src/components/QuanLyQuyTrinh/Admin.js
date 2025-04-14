@@ -1718,7 +1718,7 @@ const Admin = () => {
                         <Button onClick={handleSaveFile}>
                             Xuất
                         </Button>,
-                        (gopY == false) && (
+                        (gopY === false) && (
                             <Button type="primary" onClick={handleOpenSuaDoiModal}>
                                 Ý kiến của BPQLHT
                             </Button>

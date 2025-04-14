@@ -641,6 +641,7 @@ const QLQT = () => {
             title: 'Trạng thái',
             dataIndex: 'NhanXet',
             key: 'NhanXet',
+            render: (text) => text ? text : 'Chờ xử lý',
         },
         {
             title: 'Ngày xem',

@@ -484,6 +484,7 @@ const QLTL = () => {
             title: 'Trạng thái',
             dataIndex: 'NhanXet',
             key: 'NhanXet',
+            render: (text) => text ? text : 'Chờ xử lý',
         },
         {
             title: 'Comment',
