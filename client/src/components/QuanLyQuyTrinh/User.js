@@ -26,12 +26,6 @@ const User = () => {
     };
     const menu = (
         <Menu>
-            <Menu.Item key="account">
-                <a href="/account">Tài khoản</a>
-            </Menu.Item>
-            <Menu.Item key="settings">
-                <a href="/settings">Cài đặt</a>
-            </Menu.Item>
             <Menu.Item key="logout" onClick={handleLogout}>
                 Log Out
             </Menu.Item>
@@ -73,13 +67,27 @@ const User = () => {
                 }}
             >
                 <div style={{ fontSize: '20px', fontWeight: 'bold' }}>Quản lý tài liệu</div>
-                <Dropdown overlay={menu} trigger={['click']}>
-                    <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                        <Avatar icon={<UserOutlined />} />
-                        <span style={{ marginLeft: '8px' }}>{localStorage.getItem('HoTen')}</span>
-                        {/* <SettingOutlined style={{ marginLeft: '8px' }} /> */}
-                    </div>
-                </Dropdown>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <Dropdown
+                        trigger={['hover']}
+                        overlay={
+                            <Menu>
+                                <Menu.Item disabled key="userName" style={{ fontWeight: 'bold', color: '#1890ff' }}>
+                                    {localStorage.getItem('HoTen')}
+                                </Menu.Item>
+                                <Menu.Divider />
+                                <Menu.Item key="logout" onClick={handleLogout}>
+                                    Đăng xuất
+                                </Menu.Item>
+                            </Menu>
+                        }
+                    >
+                        <Avatar
+                            icon={<UserOutlined />}
+                            style={{ marginLeft: '20px', cursor: 'pointer' }}
+                        />
+                    </Dropdown>
+                </div>
             </Header>
             <Layout >
                 <Sider collapsible>

@@ -13,13 +13,10 @@ import {
     Form,
     DatePicker,
     Select,
-    Layout,
-    Menu,
-    Dropdown,
-    Avatar, Popconfirm,
+    Layout, Popconfirm,
     Card
 } from 'antd';
-import { UploadOutlined, SettingOutlined, UserOutlined } from '@ant-design/icons';
+import { UploadOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import PizZip from "pizzip";
@@ -581,6 +578,11 @@ const Admin_SP = () => {
             } else {
                 formData.append('PhienBan', values.PhienBan);
             }
+            if (!values.TaiLieuChung || values.TaiLieuChung.trim() === "") {
+                formData.append('TaiLieuChung', "NULL");
+            } else {
+                formData.append('TaiLieuChung', values.TaiLieuChung);
+            }
             formData.append('NgayHieuLuc', values.NgayHieuLuc.format('YYYY-MM-DD'));
             formData.append('File', file);
             formData.append('CurrentUrl', window.location.href);
@@ -776,7 +778,7 @@ const Admin_SP = () => {
             dataIndex: "TenSanPham",
             key: "TenSanPham",
             editable: true,
-            width: "25%",
+            width: "20%",
             filters: LPTFilters_TenSanPham,
             filterSearch: true,
             onFilter: (value, record) => record.TenSanPham.includes(value),
@@ -811,19 +813,21 @@ const Admin_SP = () => {
             align: "center",
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
-        {
-            title: 'Chi Tiết',
-            key: 'insert',
-            align: "center",
-            render: (text, record) => (
-                <Button
-                    type="primary"
-                    onClick={(e) => { e.stopPropagation(); setBPN(record.BoPhanGui); setModalTitleId(record.SanPhamId); setAddVersionModalVisible(true) }}
-                >
-                    Thêm tài liệu
-                </Button>
-            ),
-        },
+        ...(role !== "admin_C" ?
+            [{
+                title: 'Chi Tiết',
+                key: 'insert',
+                align: "center",
+                render: (text, record) => (
+                    <Button
+                        type="primary"
+                        onClick={(e) => { e.stopPropagation(); setBPN(record.BoPhanGui); setModalTitleId(record.SanPhamId); setAddVersionModalVisible(true) }}
+                    >
+                        Thêm tài liệu
+                    </Button>
+                ),
+            }]
+            : []),
         ...(role === "admin"
             ? [
                 {
@@ -1288,13 +1292,15 @@ const Admin_SP = () => {
                             />
                         </Card>
                     </Col>
-                    <Col xs={24} sm={4}>
-                        <Card style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)" }}>
-                            <div style={{ display: 'flex', justifyContent: 'center' }}>
-                                <Button type="primary" onClick={() => setAddProcessModalVisible(true)}>Thêm sản phẩm mới</Button>
-                            </div>
-                        </Card>
-                    </Col>
+                    {(role !== 'admin_C') && (
+                        <Col xs={24} sm={4}>
+                            <Card style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)" }}>
+                                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                    <Button type="primary" onClick={() => setAddProcessModalVisible(true)}>Thêm sản phẩm mới</Button>
+                                </div>
+                            </Card>
+                        </Col>
+                    )}
                     {/* Bảng phiên bản mới nhất */}
                     <Col xs={24} sm={24}>
 
@@ -1892,7 +1898,7 @@ const Admin_SP = () => {
 
                         <Form.Item>
                             <Button type="primary" htmlType="submit">
-                                Tạo DOCX
+                                Xuất file
                             </Button>
                         </Form.Item>
                     </Form>

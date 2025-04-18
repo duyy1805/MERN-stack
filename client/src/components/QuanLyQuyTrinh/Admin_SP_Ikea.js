@@ -562,9 +562,14 @@ const Admin_SP_Ikea = () => {
             formData.append('MaSanPham', "NULL");
             formData.append('MuaSanPham', "NULL");
             if (!values.PhienBan || values.PhienBan.trim() === "") {
-                formData.append('PhienBan', 0); // Hoặc có thể không thêm vào nếu API hỗ trợ
+                formData.append('PhienBan', 0);
             } else {
                 formData.append('PhienBan', values.PhienBan);
+            }
+            if (!values.TaiLieuChung || values.TaiLieuChung.trim() === "") {
+                formData.append('TaiLieuChung', "NULL");
+            } else {
+                formData.append('TaiLieuChung', values.TaiLieuChung);
             }
             formData.append('NgayHieuLuc', values.NgayHieuLuc.format('YYYY-MM-DD'));
             formData.append('File', file);
@@ -744,7 +749,7 @@ const Admin_SP_Ikea = () => {
             dataIndex: "TenSanPham",
             key: "TenSanPham",
             editable: true,
-            width: "25%",
+            width: "20%",
             filters: LPTFilters_TenSanPham,
             filterSearch: true,
             onFilter: (value, record) => record.TenSanPham.includes(value),
@@ -779,19 +784,21 @@ const Admin_SP_Ikea = () => {
             align: "center",
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
-        {
-            title: 'Chi Tiết',
-            key: 'insert',
-            align: "center",
-            render: (text, record) => (
-                <Button
-                    type="primary"
-                    onClick={(e) => { e.stopPropagation(); setBPN(record.BoPhanGui); setModalTitleId(record.SanPhamId); setAddVersionModalVisible(true) }}
-                >
-                    Thêm tài liệu
-                </Button>
-            ),
-        },
+        ...(role !== "admin_C" ?
+            [{
+                title: 'Chi Tiết',
+                key: 'insert',
+                align: "center",
+                render: (text, record) => (
+                    <Button
+                        type="primary"
+                        onClick={(e) => { e.stopPropagation(); setBPN(record.BoPhanGui); setModalTitleId(record.SanPhamId); setAddVersionModalVisible(true) }}
+                    >
+                        Thêm tài liệu
+                    </Button>
+                ),
+            }]
+            : []),
         ...(role === "admin"
             ? [
                 {
@@ -1216,13 +1223,15 @@ const Admin_SP_Ikea = () => {
                             />
                         </Card>
                     </Col>
-                    <Col xs={24} sm={4}>
-                        <Card style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)" }}>
-                            <div style={{ display: 'flex', justifyContent: 'center' }}>
-                                <Button type="primary" onClick={() => setAddProcessModalVisible(true)}>Thêm sản phẩm mới</Button>
-                            </div>
-                        </Card>
-                    </Col>
+                    {(currentRole !== 'admin_C') && (
+                        <Col xs={24} sm={4}>
+                            <Card style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)" }}>
+                                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                    <Button type="primary" onClick={() => setAddProcessModalVisible(true)}>Thêm sản phẩm mới</Button>
+                                </div>
+                            </Card>
+                        </Col>
+                    )}
                     {/* Bảng phiên bản mới nhất */}
                     <Col xs={24} sm={24}>
 
@@ -1352,6 +1361,13 @@ const Admin_SP_Ikea = () => {
                         // rules={[{ required: true, message: 'Vui lòng nhập phiên bản!' }]}
                         >
                             <Input placeholder="Nhập số phiên bản" />
+                        </Form.Item>
+                        <Form.Item
+                            label="Tài liệu chung"
+                            name="TaiLieuChung"
+                        // rules={[{ required: true, message: 'Vui lòng nhập phiên bản!' }]}
+                        >
+                            <Input placeholder="Tài liệu chung cho thể loại" />
                         </Form.Item>
                         <Form.Item
                             label="Ngày hiệu lực"
@@ -1785,7 +1801,7 @@ const Admin_SP_Ikea = () => {
 
                         <Form.Item>
                             <Button type="primary" htmlType="submit">
-                                Tạo DOCX
+                                Xuất file
                             </Button>
                         </Form.Item>
                     </Form>

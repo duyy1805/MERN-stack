@@ -63,7 +63,8 @@ const QLTL_Ikea = () => {
 
     const handleOpenSuaDoiModal = () => {
         formSuaDoi.resetFields();
-        setTaiLieuList([]); // Reset danh sách tài liệu khi mở modal
+        setTaiLieuList([]);
+        addTaiLieu(); // Reset danh sách tài liệu khi mở modal
         setIsModalSuaDoiOpen(true);
     };
     const addTaiLieu = () => {
@@ -739,14 +740,14 @@ const QLTL_Ikea = () => {
                             columns={[
                                 { title: "Tên tài liệu", dataIndex: "TenTaiLieu" },
                                 { title: "Mã tài liệu", dataIndex: "MaTaiLieu" },
-                                { title: "Nội dung yêu cầu", dataIndex: "NoiDungYeuCau", render: (_, record) => <Input onChange={e => updateTaiLieu(record.key, "NoiDungYeuCau", e.target.value)} /> },
-                                { title: "Lý do", dataIndex: "LyDo", render: (_, record) => <Input onChange={e => updateTaiLieu(record.key, "LyDo", e.target.value)} /> },
+                                { title: "Nội dung yêu cầu", dataIndex: "NoiDungYeuCau", render: (_, record) => <Input.TextArea onChange={e => updateTaiLieu(record.key, "NoiDungYeuCau", e.target.value)} autoSize={{ minRows: 1, maxRows: 10 }} /> },
+                                { title: "Lý do", dataIndex: "LyDo", render: (_, record) => <Input.TextArea onChange={e => updateTaiLieu(record.key, "LyDo", e.target.value)} autoSize={{ minRows: 1, maxRows: 10 }} /> },
                             ]}
                             pagination={false}
                         />
-                        <Button type="dashed" onClick={addTaiLieu} style={{ marginTop: 10 }}>
+                        {/* <Button type="dashed" onClick={addTaiLieu} style={{ marginTop: 10 }}>
                             Thêm tài liệu
-                        </Button>
+                        </Button> */}
 
                         <h3>Ý kiến</h3>
                         <Form.Item label="Ý kiến của trưởng/phó bộ phận yêu cầu soạn thảo" name="YKienTruongBoPhan">
@@ -765,7 +766,7 @@ const QLTL_Ikea = () => {
 
                         <Form.Item>
                             <Button type="primary" htmlType="submit">
-                                Tạo DOCX
+                                Xuất file
                             </Button>
                         </Form.Item>
                     </Form>

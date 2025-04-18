@@ -257,8 +257,10 @@ const Admin = () => {
 
             saveAs(fileResponse.data, fileName);
         } catch (error) {
-            message.error("Lỗi khi tải file phản hồi!");
-            console.error(error);
+            messageApi.open({
+                type: 'warning',
+                content: `Không phải file hoàn chỉnh!`,
+            });
         }
     };
     //xử lý sử
@@ -1094,7 +1096,7 @@ const Admin = () => {
             ),
         },
         {
-            title: 'Chi Tiết',
+            title: 'Phản hồi',
             key: 'action',
             align: "center",
             render: (text, record) => (
@@ -1754,7 +1756,7 @@ const Admin = () => {
 
                         <Form.Item>
                             <Button type="primary" htmlType="submit">
-                                Tạo DOCX
+                                Xuất file
                             </Button>
                         </Form.Item>
                     </Form>

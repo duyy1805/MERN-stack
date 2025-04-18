@@ -65,11 +65,11 @@ const QLQT = () => {
 
     const handleOpenSuaDoiModal = () => {
         formSuaDoi.resetFields();
-        setTaiLieuList([]); // Reset danh sách tài liệu khi mở modal
+        setTaiLieuList([]);
+        addTaiLieu();
         setIsModalSuaDoiOpen(true);
     };
     const addTaiLieu = () => {
-        console.log(currentRecord)
         setTaiLieuList(prev => [
             ...prev,
             {
@@ -114,7 +114,6 @@ const QLQT = () => {
                 NgayYKienBoPhanQuanLy: "{NgayYKienBoPhanQuanLy}",  // Giữ nguyên biến trong file DOCX
                 ChuKyBoPhanQuanLy: "{ChuKyBoPhanQuanLy}",      // Giữ nguyên biến trong file DOCX
             };
-
 
             // Load template DOCX
             const content = await loadFile("/temp.docx");
@@ -306,7 +305,6 @@ const QLQT = () => {
                 `${apiConfig.API_BASE_URL}/B8/viewWord?id=${record.Id}`,
                 { responseType: "blob" }
             );
-
             if (response.status === 200) {
                 setVisible(true);
                 const arrayBuffer = await response.data.arrayBuffer();
@@ -866,14 +864,14 @@ const QLQT = () => {
                             columns={[
                                 { title: "Tên tài liệu", dataIndex: "TenTaiLieu" },
                                 { title: "Mã tài liệu", dataIndex: "MaTaiLieu" },
-                                { title: "Nội dung yêu cầu", dataIndex: "NoiDungYeuCau", render: (_, record) => <Input onChange={e => updateTaiLieu(record.key, "NoiDungYeuCau", e.target.value)} /> },
-                                { title: "Lý do", dataIndex: "LyDo", render: (_, record) => <Input onChange={e => updateTaiLieu(record.key, "LyDo", e.target.value)} /> },
+                                { title: "Nội dung yêu cầu", dataIndex: "NoiDungYeuCau", render: (_, record) => <Input.TextArea onChange={e => updateTaiLieu(record.key, "NoiDungYeuCau", e.target.value)} autoSize={{ minRows: 1, maxRows: 10 }} /> },
+                                { title: "Lý do", dataIndex: "LyDo", render: (_, record) => <Input.TextArea onChange={e => updateTaiLieu(record.key, "LyDo", e.target.value)} autoSize={{ minRows: 1, maxRows: 10 }} /> },
                             ]}
                             pagination={false}
                         />
-                        <Button type="dashed" onClick={addTaiLieu} style={{ marginTop: 10 }}>
+                        {/* <Button type="dashed" onClick={addTaiLieu} style={{ marginTop: 10 }}>
                             Thêm tài liệu
-                        </Button>
+                        </Button> */}
 
                         <h3>Ý kiến</h3>
                         <Form.Item label="Ý kiến của trưởng/phó bộ phận yêu cầu soạn thảo" name="YKienTruongBoPhan">
@@ -882,7 +880,6 @@ const QLQT = () => {
                         <Form.Item label="Chữ ký (ghi rõ họ tên) của trưởng/phó bộ phận" name="ChuKyTruongBoPhan">
                             <Input />
                         </Form.Item>
-
                         {/* <Form.Item label="Ý kiến của Bộ phận Quản lý hệ thống" name="YKienBoPhanQuanLy">
                             <Input.TextArea />
                         </Form.Item>
@@ -892,7 +889,7 @@ const QLQT = () => {
 
                         <Form.Item>
                             <Button type="primary" htmlType="submit">
-                                Tạo DOCX
+                                Xuất file
                             </Button>
                         </Form.Item>
                     </Form>
