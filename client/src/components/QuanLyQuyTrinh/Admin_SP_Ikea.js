@@ -502,7 +502,7 @@ const Admin_SP_Ikea = () => {
                 KhachHang: values.KhachHang,
                 DongHang: values.DongHang,
                 MaCC: values.MaCC,
-                TheLoai: values.TheLoai,
+                TheLoai: values.TheLoai.trim().toUpperCase(),
                 TenSanPham: values.TenSanPham,
                 BoPhanIds: values.BoPhanIds // Dữ liệu mảng
             };

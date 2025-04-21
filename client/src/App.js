@@ -13,7 +13,7 @@ import PrivateRoute_B8 from "./components/PrivateRoute_B8";
 import NotFound from "./components/NotFound"
 import CSPN from "./components/QuanLyChuyenMay/CSPN"
 import QRCodeScanner from "./components/QRCodeScanner";
-
+import ProductionPlan from "./components/QuanLyChuyenMay/ProductionPlan";
 function App() {
   return (
     <Router>
@@ -22,7 +22,9 @@ function App() {
         <Route exact path="/B3" component={SignIn} />
         <Route exact path="/B2" component={SignIn_B2} />
         <Route exact path="/B8" component={SignIn_B8} />
+        <Route exact path="/CSPN" component={CSPN} />
         <Route exact path="/" component={NotFound} />
+        <Route exact path="/ProductionPlan" component={ProductionPlan} />
         <PrivateRoute_B3 exact path="/B3/pxvt" component={PXVT} rolesAllowed={["admin"]} />
         <PrivateRoute path="/B2/qr" component={Qr} rolesAllowed={["user"]} />
         <PrivateRoute_B8 exact path="/B8/QLQT" component={User} rolesAllowed={["user"]} />
