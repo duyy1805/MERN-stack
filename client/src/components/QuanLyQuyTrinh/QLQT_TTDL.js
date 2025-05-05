@@ -21,9 +21,8 @@ const loadFile = async (url) => {
 };
 const { Header, Content } = Layout;
 
-const QLQT = () => {
+const QLQT_TTDL = () => {
     const [allData, setAllData] = useState([]); // tất cả phiên bản của các quy trình
-    const [allData_HD, setAllData_HD] = useState([]);
     const [data, setData] = useState([]);
     const [allProcessNames, setAllProcessNames] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -31,8 +30,6 @@ const QLQT = () => {
     const [modalVisible, setModalVisible] = useState(false);
     const [prevModalVisible, setPrevModalVisible] = useState(false);
     const [modalData, setModalData] = useState([]); // dữ liệu phiên bản của quy trình được chọn
-    const [modalData_HD, setModalData_HD] = useState([]);
-    const [modalData_BM, setModalData_BM] = useState([]);
     const [modalTitle, setModalTitle] = useState(''); // tên quy trình được chọn
     const [modalTitleId, setModalTitleId] = useState(''); // id quy trình được chọn
 
@@ -137,7 +134,7 @@ const QLQT = () => {
             formData.append("BoPhan", currentRecord.BoPhan);
 
             // Gửi file lên API
-            const response = await axios.post(`${apiConfig.API_BASE_URL}/B8/themquytrinhfeedback`, formData, {
+            const response = await axios.post(`${apiConfig.API_BASE_URL}/TTDL/themquytrinhfeedback`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
@@ -174,7 +171,7 @@ const QLQT = () => {
             formData.append("QuyTrinhVersionId", currentRecord.VersionId);
             formData.append("BoPhan", currentRecord.BoPhan);
 
-            const response = await axios.post(`${apiConfig.API_BASE_URL}/B8/themquytrinhfeedbackgy`, formData, {
+            const response = await axios.post(`${apiConfig.API_BASE_URL}/TTDL/themquytrinhfeedbackgy`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
@@ -194,7 +191,7 @@ const QLQT = () => {
 
     const fetchDataFeedback = async () => {
         try {
-            const res = await axios.get(`${apiConfig.API_BASE_URL}/B8/quytrinhfeedback`);
+            const res = await axios.get(`${apiConfig.API_BASE_URL}/TTDL/quytrinhfeedback`);
             const list = res.data;
 
             // Lọc theo FilePath và FilePath_
@@ -253,7 +250,7 @@ const QLQT = () => {
         );
         try {
             const response = await axios.get(
-                `${apiConfig.API_BASE_URL}/B8/viewWord?id=${record.Id}`,
+                `${apiConfig.API_BASE_URL}/TTDL/viewWord?id=${record.Id}`,
                 { responseType: "blob" }
             );
 
@@ -305,7 +302,7 @@ const QLQT = () => {
         );
         try {
             const response = await axios.get(
-                `${apiConfig.API_BASE_URL}/B8/viewWord?id=${record.Id}`,
+                `${apiConfig.API_BASE_URL}/TTDL/viewWord?id=${record.Id}`,
                 { responseType: "blob" }
             );
             if (response.status === 200) {
@@ -337,7 +334,7 @@ const QLQT = () => {
 
         try {
             const response = await axios.get(
-                `${apiConfig.API_BASE_URL}/B8/viewWordConfirm?id=${record.Id}`,
+                `${apiConfig.API_BASE_URL}/TTDL/viewWordConfirm?id=${record.Id}`,
                 { responseType: "blob" }
             );
 
@@ -367,7 +364,7 @@ const QLQT = () => {
         try {
             const userId = localStorage.getItem('userId');
             console.log(currentRecord.VersionId)
-            await axios.post(`${apiConfig.API_BASE_URL}/B8/markAsViewed`, {
+            await axios.post(`${apiConfig.API_BASE_URL}/TTDL/markAsViewed`, {
                 NguoiDungId: parseInt(userId),
                 QuyTrinhVersionId: currentRecord.VersionId,
                 NhanXet: comment
@@ -403,16 +400,11 @@ const QLQT = () => {
         setLoading(true);
         try {
             const userId = localStorage.getItem('userId');
-            const res = await axios.get(`${apiConfig.API_BASE_URL}/B8/quytrinh`, {
-                params: { userId } // truyền userId vào query string
-            });
-            const res_ = await axios.get(`${apiConfig.API_BASE_URL}/B8/huongdan`, {
+            const res = await axios.get(`${apiConfig.API_BASE_URL}/TTDL/quytrinh`, {
                 params: { userId } // truyền userId vào query string
             });
             const list = res.data;
-            const list_ = res_.data;
             setAllData(list);
-            setAllData_HD(list_);
             setData(getLatestVersions(list));
 
             const names = Array.from(
@@ -439,13 +431,13 @@ const QLQT = () => {
             });
         }
         else {
-            const url = `${apiConfig.API_BASE_URL}/B8/viewPDF?QuyTrinhVersionId=${record.VersionId}`;
+            const url = `${apiConfig.API_BASE_URL}/TTDL/viewPDF?QuyTrinhVersionId=${record.VersionId}`;
             setPdfUrl(url);
             setPdfVisible(true);
             if (record.NgayXem === null) {
                 try {
                     const userId = localStorage.getItem('userId');
-                    await axios.post(`${apiConfig.API_BASE_URL}/B8/markAsViewed`, {
+                    await axios.post(`${apiConfig.API_BASE_URL}/TTDL/markAsViewed`, {
                         NguoiDungId: parseInt(userId),
                         QuyTrinhVersionId: record.VersionId,
                         NhanXet: 'NULL',
@@ -481,29 +473,7 @@ const QLQT = () => {
             }
         }
     };
-    const handleViewPdf_HD = async (record) => {
-        setPrevModalVisible(modalVisible); // Lưu trạng thái trước khi đóng
-        setModalVisible(false);
-        setCurrentRecord(record);
-        if (record.PhienBan === null) {
-            messageApi.open({
-                type: 'error',
-                content: `Phiên bản không tồn tại!`,
-            });
-        }
-        else {
-            try {
-                const url = `${apiConfig.API_BASE_URL}/B8/viewPDF_hd?HuongDanId=${record.HuongDanId}`;
-                setPdfUrl(url);
-                setPdfVisible(true);
-            } catch (error) {
-                messageApi.open({
-                    type: 'error',
-                    content: `Lỗi xem PDF: ${error.message}`,
-                });
-            }
-        }
-    };
+
     const createFilters = (key) => {
         const uniqueValues = [...new Set(data.map((item) => item[key]))];
         return uniqueValues.map((value) => ({
@@ -560,7 +530,7 @@ const QLQT = () => {
                 if (record.PhienBan === null) {
                     return <span>Chưa có phiên bản</span>;
                 }
-                const downloadUrl = `${apiConfig.API_BASE_URL}/B8/downloadPDF?QuyTrinhVersionId=${record.VersionId}`;
+                const downloadUrl = `${apiConfig.API_BASE_URL}/TTDL/downloadPDF?QuyTrinhVersionId=${record.VersionId}`;
                 return <div><a href={downloadUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{record.PhienBan}</a></div>;
             },
         },
@@ -581,17 +551,17 @@ const QLQT = () => {
         {
             title: 'Chi Tiết',
             key: 'action',
-            align: 'center',
             render: (text, record) => (
                 <Button
                     type="primary"
                     onClick={(e) => { e.stopPropagation(); handleViewDetails(record.QuyTrinhId, record.TenQuyTrinh); }}
                 >
-                    Phiên bản
+                    Xem tất cả
                 </Button>
             ),
         },
     ];
+
     // Hàm lấy dữ liệu từ API
     useEffect(() => {
         fetchData();
@@ -617,42 +587,10 @@ const QLQT = () => {
         const details = allData
             .filter(item => item.QuyTrinhId === QuyTrinhId)
             .sort((a, b) => b.PhienBan - a.PhienBan);
-
-        const details_HD = allData_HD.filter(item => item.QuyTrinhId === QuyTrinhId && item.Type === 'Hướng dẫn');
-        const details_BM = allData_HD.filter(item => item.QuyTrinhId === QuyTrinhId && item.Type === 'Biểu mẫu');
         setModalData(details);
-        setModalData_HD(details_HD)
-        setModalData_BM(details_BM)
         setModalTitle(TenQuyTrinh);
         setModalTitleId(QuyTrinhId);
         setModalVisible(true);
-    };
-
-    const handleConfirm = async (record, field) => {
-        try {
-            const userId = localStorage.getItem('userId');
-            const response = await axios.post(`${apiConfig.API_BASE_URL}/B8/confirmAction`, {
-                NguoiDungId: parseInt(userId),
-                QuyTrinhVersionId: record.VersionId,
-                Field: field,
-            });
-
-            if (response.data.success) {
-                messageApi.open({ type: 'success', content: `Đã xác nhận ${field} thành công!` });
-                // Cập nhật trạng thái modalData
-                setModalData((prevData) =>
-                    prevData.map((item) =>
-                        item.QuyTrinhVersionId === record.QuyTrinhVersionId
-                            ? { ...item, [field]: dayjs().format('YYYY-MM-DD') }
-                            : item
-                    )
-                );
-            } else {
-                messageApi.open({ type: 'error', content: "Có lỗi xảy ra khi xác nhận" });
-            }
-        } catch (error) {
-            messageApi.open({ type: 'error', content: "Có lỗi xảy ra" });
-        }
     };
 
     // Định nghĩa cột cho bảng trong modal hiển thị danh sách phiên bản
@@ -666,7 +604,7 @@ const QLQT = () => {
                 if (record.PhienBan === null) {
                     return <span>Chưa có phiên bản</span>;
                 }
-                const downloadUrl = `${apiConfig.API_BASE_URL}/B8/downloadPDF?QuyTrinhVersionId=${record.QuyTrinhVersionId}`;
+                const downloadUrl = `${apiConfig.API_BASE_URL}/TTDL/downloadPDF?QuyTrinhVersionId=${record.QuyTrinhVersionId}`;
                 return <a href={downloadUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{record.PhienBan}</a>;
             },
         },
@@ -703,6 +641,27 @@ const QLQT = () => {
             align: "center",
             render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
         },
+        // {
+        //     title: 'Đồng ý',
+        //     dataIndex: 'NgayDongY',
+        //     key: 'NgayDongY',
+        //     align: "center",
+        //     render: (date, record) => renderDateOrButton(date, record, 'NgayDongY'),
+        // },
+        // {
+        //     title: 'Tuân thủ',
+        //     dataIndex: 'NgayTuanThu',
+        //     key: 'NgayTuanThu',
+        //     align: "center",
+        //     render: (date, record) => renderDateOrButton(date, record, 'NgayTuanThu'),
+        // },
+        // {
+        //     title: 'Đào tạo',
+        //     dataIndex: 'NgayDaoTao',
+        //     key: 'NgayDaoTao',
+        //     align: "center",
+        //     render: (date, record) => renderDateOrButton(date, record, 'NgayDaoTao'),
+        // },
         {
             title: 'Ghi chú',
             key: 'GhiChu',
@@ -724,136 +683,6 @@ const QLQT = () => {
                     Phản hồi
                 </Button>
             ),
-        },
-    ];
-
-    const modalHuongDanColumns = [
-        {
-            title: 'Mã hướng dẫn',
-            dataIndex: 'MaHuongDan',
-            key: 'MaHuongDan',
-        },
-        {
-            title: 'Tên hướng dẫn',
-            dataIndex: 'TenHuongDan',
-            key: 'TenHuongDan',
-            width: '20%',
-            render: (text) =>
-                text && text.length > 50 ? (
-                    <Tooltip title={text}>
-                        <span>{text.slice(0, 50)}...</span>
-                    </Tooltip>
-                ) : (
-                    text
-                ),
-        },
-        {
-            title: 'Phiên bản',
-            dataIndex: 'FilePDF',
-            key: 'FilePDF',
-            align: "center",
-            render: (text, record) => {
-                if (record.PhienBan === null) {
-                    return <span>Chưa có phiên bản</span>;
-                }
-                const downloadUrl = `${apiConfig.API_BASE_URL}/B8/downloadPDF_hd?HuongDanId=${record.HuongDanId}`;
-                return <a href={downloadUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{record.PhienBan}</a>;
-            },
-        },
-        {
-            title: 'Ngày hiệu lực',
-            dataIndex: 'NgayHieuLuc',
-            key: 'NgayHieuLuc',
-            align: "center",
-            editable: true,
-            render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
-        },
-        {
-            title: 'Ngày cập nhật',
-            dataIndex: 'NgayTao',
-            key: 'NgayTao',
-            align: "center",
-            render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
-        },
-        {
-            title: 'Chỉnh sửa',
-            dataIndex: 'Comment',
-            key: 'Comment',
-            width: "15%",
-            editable: true,
-            render: (text) =>
-                text && text.length > 100 ? (
-                    <Tooltip title={text}>
-                        <span>{text.slice(0, 100)}...</span>
-                    </Tooltip>
-                ) : (
-                    text
-                ),
-        },
-    ];
-
-    const modalBieuMauColumns = [
-        {
-            title: 'Mã biểu mẫu',
-            dataIndex: 'MaHuongDan',
-            key: 'MaHuongDan',
-        },
-        {
-            title: 'Tên biểu mẫu',
-            dataIndex: 'TenHuongDan',
-            key: 'TenHuongDan',
-            width: '20%',
-            render: (text) =>
-                text && text.length > 50 ? (
-                    <Tooltip title={text}>
-                        <span>{text.slice(0, 50)}...</span>
-                    </Tooltip>
-                ) : (
-                    text
-                ),
-        },
-        {
-            title: 'Phiên bản',
-            dataIndex: 'FilePDF',
-            key: 'FilePDF',
-            align: "center",
-            render: (text, record) => {
-                if (record.PhienBan === null) {
-                    return <span>Chưa có phiên bản</span>;
-                }
-                const downloadUrl = `${apiConfig.API_BASE_URL}/B8/downloadPDF_hd?HuongDanId=${record.HuongDanId}`;
-                return <a href={downloadUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{record.PhienBan}</a>;
-            },
-        },
-        {
-            title: 'Ngày hiệu lực',
-            dataIndex: 'NgayHieuLuc',
-            key: 'NgayHieuLuc',
-            align: "center",
-            editable: true,
-            render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
-        },
-        {
-            title: 'Ngày cập nhật',
-            dataIndex: 'NgayTao',
-            key: 'NgayTao',
-            align: "center",
-            render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '',
-        },
-        {
-            title: 'Chỉnh sửa',
-            dataIndex: 'Comment',
-            key: 'Comment',
-            width: "15%",
-            editable: true,
-            render: (text) =>
-                text && text.length > 100 ? (
-                    <Tooltip title={text}>
-                        <span>{text.slice(0, 100)}...</span>
-                    </Tooltip>
-                ) : (
-                    text
-                ),
         },
     ];
     const taiLieuMoi = allData.filter(record => {
@@ -917,8 +746,8 @@ const QLQT = () => {
                     </Col> */}
                     {/* Cột bên phải: bảng danh sách phiên bản mới nhất */}
                     <Col xs={24} sm={8}>
-                        <Card title="Tài liệu mới" style={{ height: '100%', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)", marginBottom: 16 }}>
-                            <Typography.Title level={1} style={{ textAlign: "center" }}>
+                        <Card title="Tài liệu mới" style={{ height: '100%', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)" }}>
+                            <Typography.Title level={2} style={{ textAlign: "center" }}>
                                 {taiLieuMoi.length}
                             </Typography.Title>
                         </Card>
@@ -952,50 +781,17 @@ const QLQT = () => {
                     ]}
                     width="90%"
                 >
-                    <Tabs defaultActiveKey="1" >
-                        <Tabs.TabPane tab="Danh sách phiên bản" key="1">
-                            <Table
-                                dataSource={modalData}
-                                columns={modalColumns}
-                                rowKey="VersionId"
-                                className={style.tableVersions}
-                                scroll={{ y: 55 * 9 }}
-                                pagination={false}
-                                onRow={(record) => ({ onClick: () => handleViewPdf(record) })}
-                                rowClassName={(record) => record.TrangThai === 'Chưa xem' ? style.notViewed : ''}
-                            />
-                        </Tabs.TabPane>
-                        <Tabs.TabPane tab="Hướng dẫn" key="2">
-                            <Table
-                                dataSource={modalData_HD}
-                                columns={modalHuongDanColumns}
-                                rowKey="HuongDanId"
-                                pagination={false}
-                                className={style.tableVersions}
-                                scroll={{ y: 55 * 9 }}
-                                onRow={(record) => ({
-                                    onClick: (event) => {
-                                        handleViewPdf_HD(record);
-                                    },
-                                })}
-                            />
-                        </Tabs.TabPane>
-                        <Tabs.TabPane tab="Biểu mẫu" key="3">
-                            <Table
-                                dataSource={modalData_BM}
-                                columns={modalBieuMauColumns}
-                                rowKey="HuongDanId"
-                                pagination={false}
-                                className={style.tableVersions}
-                                scroll={{ y: 55 * 9 }}
-                                onRow={(record) => ({
-                                    onClick: (event) => {
-                                        handleViewPdf_HD(record);
-                                    },
-                                })}
-                            />
-                        </Tabs.TabPane>
-                    </Tabs>
+                    <Table
+                        dataSource={modalData}
+                        columns={modalColumns}
+                        rowKey="VersionId"
+                        className={style.tableVersions}
+                        scroll={{ y: 55 * 9 }}
+                        pagination={false}
+                        onRow={(record) => ({ onClick: () => handleViewPdf(record) })}
+                        rowClassName={(record) => record.TrangThai === 'Chưa xem' ? style.notViewed : ''}
+                    />
+                    {/* Modal thêm phiên bản */}
                 </Modal>
                 {/* Modal nhập nhận xét */}
                 <Modal
@@ -1141,7 +937,7 @@ const QLQT = () => {
                                 dataSource={modalFeedbackData}
                                 className={style.tableVersions}
                                 scroll={{ y: 55 * 9 }}
-                                rowClassName={(record) => record.TrangThai === 'Chưa xem' ? style.notViewed : ''}
+                                rowClassName={(record) => record.TrangThai !== 'Đã xem' ? style.notViewed : ''}
                                 onRow={(record) => ({
                                     onClick: (event) => {
                                         handleViewWord(record);
@@ -1290,4 +1086,4 @@ const QLQT = () => {
     );
 };
 
-export default QLQT;
+export default QLQT_TTDL;

@@ -9,6 +9,7 @@ import {
 import QLQT from "./QLQT";
 import QLTL from "./QLTL";
 import QLTL_Ikea from "./QLTL_Ikea";
+import QLQT_TTDL from "./QLQT_TTDL";
 import { Link, useHistory } from "react-router-dom";
 
 const { Header, Sider, Content } = Layout;
@@ -35,6 +36,7 @@ const User = () => {
         { key: "QLQT", icon: <DashboardOutlined />, label: "Quy trình" },
         { key: "QLTL", icon: <FileOutlined />, label: "Sản phẩm DEK" },
         { key: "QLTL_Ikea", icon: <FileOutlined />, label: "Sản phẩm IKEA" },
+        { key: "QLQT_TTDL", icon: <DashboardOutlined />, label: "Trung tâm đo lường" },
         // { key: "ChartDasdboard", icon: <UserOutlined />, label: "ChartDasdboard" },
     ];
 
@@ -46,8 +48,8 @@ const User = () => {
                 return <QLTL />;
             case "QLTL_Ikea":
                 return <QLTL_Ikea />;
-            // case "documents":
-            //     return <Documents />;
+            case "QLQT_TTDL":
+                return <QLQT_TTDL />;
             default:
                 return <h2>Welcome to Admin Panel</h2>;
         }

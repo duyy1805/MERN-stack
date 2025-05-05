@@ -666,7 +666,7 @@ const QLTL = () => {
                 {contextHolder}
                 <Row gutter={[16, 16]}>
                     <Col xs={24} sm={8}>
-                        <Card title="Tài liệu được nhận" style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)", marginBottom: 16 }}>
+                        <Card title="Tài liệu được nhận" style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)" }}>
                             <ResponsiveContainer width="100%" height={100}>
                                 <PieChart >
                                     <Pie
@@ -690,8 +690,8 @@ const QLTL = () => {
                     </Col>
 
                     <Col xs={24} sm={8}>
-                        <Card title="Tài liệu mới" style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)", marginBottom: 16 }}>
-                            <Typography.Title level={2} style={{ textAlign: "center" }}>
+                        <Card title="Tài liệu mới" style={{ height: '100%', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)" }}>
+                            <Typography.Title level={1} style={{ textAlign: "center" }}>
                                 {taiLieuMoi.length}
                             </Typography.Title>
                         </Card>
@@ -727,51 +727,48 @@ const QLTL = () => {
                     footer={null}
                     className={style.modalVersions}
                     width="90%"
-                    style={{ backgroundColor: '#ffffff' }}
                 >
-                    <Card style={{ backgroundColor: '', border: 'none' }}>
-                        <Tabs defaultActiveKey="1" className={style.customTabs}>
-                            <Tabs.TabPane
-                                tab={`Tài liệu theo CCCode (${modalData?.subItems?.length || 0})`}
-                                key="1"
-                            >
-                                <Table
-                                    className={style.tableVersions}
-                                    columns={expandColumns}
-                                    dataSource={modalData?.subItems || []} // Thay documentModalData thành modalData
-                                    pagination={false}
-                                    onRow={(record) => ({
-                                        onClick: () => { handleViewPdf(record) }
-                                    })}
-                                    rowClassName={(record) => record.TrangThai === 'Chưa xem' ? style.notViewed : ''}
-                                />
-                            </Tabs.TabPane>
-                            <Tabs.TabPane
-                                tab={`Tài liệu theo ItemCode (${modalData?.subItems_?.length || 0})`}
-                                key="2"
-                            >
-                                <Table
-                                    className={style.tableVersions}
-                                    columns={[
-                                        expandColumns[0], // Cột đầu tiên giữ nguyên
-                                        {
-                                            title: "ItemCode",
-                                            dataIndex: "ItemCode",
-                                            key: "ItemCode",
-                                            render: (text) => text || "N/A",
-                                        },
-                                        ...expandColumns.slice(1), // Giữ các cột còn lại sau cột đầu tiên
-                                    ]}
-                                    dataSource={modalData?.subItems_?.length ? modalData.subItems_ : []}
-                                    pagination={false}
-                                    onRow={(record) => ({
-                                        onClick: () => { handleViewPdf(record) }
-                                    })}
-                                    rowClassName={(record) => record.TrangThai === 'Chưa xem' ? style.notViewed : ''}
-                                />
-                            </Tabs.TabPane>
-                        </Tabs>
-                    </Card>
+                    <Tabs defaultActiveKey="1" className={style.customTabs}>
+                        <Tabs.TabPane
+                            tab={`Tài liệu theo CCCode (${modalData?.subItems?.length || 0})`}
+                            key="1"
+                        >
+                            <Table
+                                className={style.tableVersions}
+                                columns={expandColumns}
+                                dataSource={modalData?.subItems || []} // Thay documentModalData thành modalData
+                                pagination={false}
+                                onRow={(record) => ({
+                                    onClick: () => { handleViewPdf(record) }
+                                })}
+                                rowClassName={(record) => record.TrangThai === 'Chưa xem' ? style.notViewed : ''}
+                            />
+                        </Tabs.TabPane>
+                        <Tabs.TabPane
+                            tab={`Tài liệu theo ItemCode (${modalData?.subItems_?.length || 0})`}
+                            key="2"
+                        >
+                            <Table
+                                className={style.tableVersions}
+                                columns={[
+                                    expandColumns[0], // Cột đầu tiên giữ nguyên
+                                    {
+                                        title: "ItemCode",
+                                        dataIndex: "ItemCode",
+                                        key: "ItemCode",
+                                        render: (text) => text || "N/A",
+                                    },
+                                    ...expandColumns.slice(1), // Giữ các cột còn lại sau cột đầu tiên
+                                ]}
+                                dataSource={modalData?.subItems_?.length ? modalData.subItems_ : []}
+                                pagination={false}
+                                onRow={(record) => ({
+                                    onClick: () => { handleViewPdf(record) }
+                                })}
+                                rowClassName={(record) => record.TrangThai === 'Chưa xem' ? style.notViewed : ''}
+                            />
+                        </Tabs.TabPane>
+                    </Tabs>
                 </Modal>
                 <Modal
                     title={modalTaiLieuTitle}
@@ -784,7 +781,6 @@ const QLTL = () => {
                     ]}
                     className={style.modalVersions}
                     width="90%"
-                    style={{ backgroundColor: '#ffffff' }}
                 >
                     <Table
                         dataSource={modalVersionData}

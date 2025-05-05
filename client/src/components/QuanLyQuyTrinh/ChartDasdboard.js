@@ -431,7 +431,7 @@ const ChartDasdboard = () => {
                     <Col xs={24} sm={4}>
                         <Card title="Tổng số lượng tài liệu" headStyle={{ color: "#000" }} style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)", marginBottom: 16 }}>
                             <Typography.Title level={2} style={{ color: "#000", textAlign: "center" }}>
-                                {dataTL.filter(item => item.KhachHang === "DEK").length}
+                                {new Set(dataTL.filter(item => item.KhachHang === "DEK" && item.TaiLieuId).map(item => item.TaiLieuId)).size}
                             </Typography.Title>
                         </Card>
                     </Col>
@@ -482,7 +482,7 @@ const ChartDasdboard = () => {
                     <Col xs={24} sm={4}>
                         <Card title="Tổng số lượng tài liệu" headStyle={{ color: "#000" }} style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)", marginBottom: 16 }}>
                             <Typography.Title level={2} style={{ color: "#000", textAlign: "center" }}>
-                                {dataTL.filter(item => item.KhachHang === "IKEA" && item.TenTaiLieu !== null).length}
+                                {new Set(dataTL.filter(item => item.KhachHang === "IKEA" && item.TaiLieuId).map(item => item.TaiLieuId)).size}
                             </Typography.Title>
                         </Card>
                     </Col>

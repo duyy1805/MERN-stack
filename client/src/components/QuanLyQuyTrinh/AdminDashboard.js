@@ -5,6 +5,7 @@ import {
 } from "antd";
 import { UserOutlined, FileOutlined, DashboardOutlined, BellOutlined, FileTextOutlined } from "@ant-design/icons";
 import Admin from "./Admin";
+import Admin_TTDL from "./Admin_TTDL";
 import Admin_SP from "./Admin_SP";
 import axios from 'axios';
 import apiConfig from '../../apiConfig.json';
@@ -42,7 +43,7 @@ const AdminDashboard = () => {
                 ...quytrinhRes.data.map(item => ({ ...item, type: 'quytrinh' })),
                 ...tailieuRes.data.map(item => ({ ...item, type: 'tailieu' }))
             ].sort((a, b) => new Date(b.NgayTao) - new Date(a.NgayTao));
-
+            console.log("Merged notifications:", merged);
             setNotifications(merged);
         } catch (error) {
             console.error("Lỗi khi fetch notifications:", error);
@@ -266,6 +267,7 @@ const AdminDashboard = () => {
         { key: "dashboard", icon: <DashboardOutlined />, label: "Quy trình" },
         { key: "documents", icon: <FileOutlined />, label: "Sản phẩm DEK" },
         { key: "documents_Ikea", icon: <FileOutlined />, label: "Sản phẩm IKEA" },
+        { key: "documents_TTDL", icon: <FileOutlined />, label: "Trung tâm đo lường" },
     ];
 
     const renderContent = () => {
@@ -278,6 +280,8 @@ const AdminDashboard = () => {
                 return <Admin_SP />;
             case "documents_Ikea":
                 return <Admin_SP_Ikea />;
+            case "documents_TTDL":
+                return <Admin_TTDL />;
             default:
                 return <h2>Welcome to Admin Panel</h2>;
         }

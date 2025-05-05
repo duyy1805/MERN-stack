@@ -675,8 +675,14 @@ const Admin_SP_Ikea = () => {
     const uniqueBoPhan = [...new Set(allData
         .map(item => item.BoPhan)
         .filter(bp => bp))] // Loại bỏ giá trị NULL hoặc rỗng
-
+    const departmentOrder = [
+        "B7 (Phòng KT-CN)", "B8 (Phòng Kiểm nghiệm)", "B9 (Phòng Cơ điện)", "Trung tâm đo lường"
+    ];
     const boPhanOptions = uniqueBoPhan.map(bp => ({
+        value: bp,
+        label: bp
+    }));
+    const boPhanOptions_ = departmentOrder.map(bp => ({
         value: bp,
         label: bp
     }));
@@ -689,6 +695,7 @@ const Admin_SP_Ikea = () => {
         { value: "HFB9", label: "HFB9" },
         { value: "HFB11", label: "HFB11" },
         { value: "HFB12", label: "HFB12" },
+        { value: "HFB14", label: "HFB14" },
         { value: "HFB15", label: "HFB15" },
         { value: "HFB17", label: "HFB17" },
         { value: "HFB18", label: "HFB18" }
@@ -1383,7 +1390,7 @@ const Admin_SP_Ikea = () => {
                         >
                             <Select
                                 placeholder="Chọn bộ phận ban hành"
-                                options={boPhanOptions} // Danh sách bộ phận lấy từ API
+                                options={boPhanOptions_} // Danh sách bộ phận lấy từ API
                             />
                         </Form.Item>
                         <Form.Item

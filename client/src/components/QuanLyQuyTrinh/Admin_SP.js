@@ -688,8 +688,14 @@ const Admin_SP = () => {
     const uniqueBoPhan = [...new Set(allData
         .map(item => item.BoPhan)
         .filter(bp => bp))] // Loại bỏ giá trị NULL hoặc rỗng
-
+    const departmentOrder = [
+        "B7 (Phòng KT-CN)", "B8 (Phòng Kiểm nghiệm)", "B9 (Phòng Cơ điện)", "Trung tâm đo lường"
+    ];
     const boPhanOptions = uniqueBoPhan.map(bp => ({
+        value: bp,
+        label: bp
+    }));
+    const boPhanOptions_ = departmentOrder.map(bp => ({
         value: bp,
         label: bp
     }));
@@ -1345,47 +1351,45 @@ const Admin_SP = () => {
                     className={style.modalVersions}
                     width="90%"
                 >
-                    <Card style={{ backgroundColor: '', border: 'none' }}>
-                        <Tabs defaultActiveKey="1" className={style.customTabs}>
-                            <Tabs.TabPane
-                                tab={`Tài liệu theo CCCode (${modalData?.subItems?.length || 0})`}
-                                key="1"
-                            >
-                                <Table
-                                    className={style.tableVersions}
-                                    columns={expandColumns}
-                                    dataSource={modalData?.subItems || []} // Thay documentModalData thành modalData
-                                    pagination={false}
-                                    onRow={(record) => ({
-                                        onClick: () => { handleViewPdf(record) }
-                                    })}
-                                />
-                            </Tabs.TabPane>
-                            <Tabs.TabPane
-                                tab={`Tài liệu theo ItemCode (${modalData?.subItems_?.length || 0})`}
-                                key="2"
-                            >
-                                <Table
-                                    className={style.tableVersions}
-                                    columns={[
-                                        expandColumns[0], // Cột đầu tiên giữ nguyên
-                                        {
-                                            title: "ItemCode",
-                                            dataIndex: "ItemCode",
-                                            key: "ItemCode",
-                                            render: (text) => text || "N/A",
-                                        },
-                                        ...expandColumns.slice(1), // Giữ các cột còn lại sau cột đầu tiên
-                                    ]}
-                                    dataSource={modalData?.subItems_?.length ? modalData.subItems_ : []}
-                                    pagination={false}
-                                    onRow={(record) => ({
-                                        onClick: () => { handleViewPdf(record) }
-                                    })}
-                                />
-                            </Tabs.TabPane>
-                        </Tabs>
-                    </Card>
+                    <Tabs defaultActiveKey="1" className={style.customTabs}>
+                        <Tabs.TabPane
+                            tab={`Tài liệu theo CCCode (${modalData?.subItems?.length || 0})`}
+                            key="1"
+                        >
+                            <Table
+                                className={style.tableVersions}
+                                columns={expandColumns}
+                                dataSource={modalData?.subItems || []} // Thay documentModalData thành modalData
+                                pagination={false}
+                                onRow={(record) => ({
+                                    onClick: () => { handleViewPdf(record) }
+                                })}
+                            />
+                        </Tabs.TabPane>
+                        <Tabs.TabPane
+                            tab={`Tài liệu theo ItemCode (${modalData?.subItems_?.length || 0})`}
+                            key="2"
+                        >
+                            <Table
+                                className={style.tableVersions}
+                                columns={[
+                                    expandColumns[0], // Cột đầu tiên giữ nguyên
+                                    {
+                                        title: "ItemCode",
+                                        dataIndex: "ItemCode",
+                                        key: "ItemCode",
+                                        render: (text) => text || "N/A",
+                                    },
+                                    ...expandColumns.slice(1), // Giữ các cột còn lại sau cột đầu tiên
+                                ]}
+                                dataSource={modalData?.subItems_?.length ? modalData.subItems_ : []}
+                                pagination={false}
+                                onRow={(record) => ({
+                                    onClick: () => { handleViewPdf(record) }
+                                })}
+                            />
+                        </Tabs.TabPane>
+                    </Tabs>
                 </Modal>
                 {/* --- Modal "Xem tất cả các phiên bản" --- */}
                 <Modal
@@ -1455,13 +1459,25 @@ const Admin_SP = () => {
                                 </Form.Item>
                             </Col>
                         </Row>
-                        <Form.Item
-                            label="Phiên Bản"
-                            name="PhienBan"
-                        // rules={[{ required: true, message: 'Vui lòng nhập phiên bản!' }]}
-                        >
-                            <Input placeholder="Nhập số phiên bản" />
-                        </Form.Item>
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item
+                                    label="Phiên Bản"
+                                    name="PhienBan"
+                                // rules={[{ required: true, message: 'Vui lòng nhập phiên bản!' }]}
+                                >
+                                    <Input placeholder="Nhập số phiên bản" />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item
+                                    label="Tài liệu chung"
+                                    name="TaiLieuChung"
+                                >
+                                    <Input placeholder="Tài liệu chung cho thể loại" />
+                                </Form.Item>
+                            </Col>
+                        </Row>
                         <Form.Item
                             label="Ngày hiệu lực"
                             name="NgayHieuLuc"
@@ -1476,7 +1492,7 @@ const Admin_SP = () => {
                         >
                             <Select
                                 placeholder="Chọn bộ phận ban hành"
-                                options={boPhanOptions} // Danh sách bộ phận lấy từ API
+                                options={boPhanOptions_} // Danh sách bộ phận lấy từ API
                             />
                         </Form.Item>
                         <Form.Item

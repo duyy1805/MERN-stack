@@ -55,6 +55,7 @@ function Qr() {
             console.log(qrImage);
             wsData.push([
                 device.LoaiPhuongTien,
+                device.MaThietBi,
                 device.ViTri,
                 { t: "s", v: qrImage } // Lưu chuỗi base64 trực tiếp, không phải hyperlink
             ]);
@@ -339,6 +340,11 @@ function Qr() {
             onFilter: (value, record) => record.LoaiPhuongTien.includes(value),
             ellipsis: { showTitle: false },
             render: (text) => <Tooltip placement="topLeft" title={text}>{text}</Tooltip>,
+        },
+        {
+            title: "Mã thiết bị",
+            dataIndex: "MaThietBi",
+            key: "MaThietBi",
         },
         {
             title: "Vị Trí",

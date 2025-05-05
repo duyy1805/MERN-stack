@@ -594,7 +594,7 @@ const QLTL_Ikea = () => {
                 {contextHolder}
                 <Row gutter={[16, 16]}>
                     <Col xs={24} sm={8}>
-                        <Card title="Tài liệu được nhận" style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)", marginBottom: 16 }}>
+                        <Card title="Tài liệu được nhận" style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)" }}>
                             <ResponsiveContainer width="100%" height={100}>
                                 <PieChart >
                                     <Pie
@@ -618,8 +618,8 @@ const QLTL_Ikea = () => {
                     </Col>
 
                     <Col xs={24} sm={8}>
-                        <Card title="Tài liệu mới" style={{ backgroundColor: '', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)", marginBottom: 16 }}>
-                            <Typography.Title level={2} style={{ textAlign: "center" }}>
+                        <Card title="Tài liệu mới" style={{ height: '100%', border: 'none', boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)", marginBottom: 16 }}>
+                            <Typography.Title level={1} style={{ textAlign: "center" }}>
                                 {taiLieuMoi.length}
                             </Typography.Title>
                         </Card>
@@ -655,20 +655,17 @@ const QLTL_Ikea = () => {
                     footer={null}
                     className={style.modalVersions}
                     width="90%"
-                    style={{ backgroundColor: '#ffffff' }}
                 >
-                    <Card style={{ backgroundColor: '', border: 'none' }}>
-                        <Table
-                            className={style.tableVersions}
-                            columns={expandColumns}
-                            dataSource={modalData?.subItems || []} // Thay documentModalData thành modalData
-                            pagination={true}
-                            onRow={(record) => ({
-                                onClick: () => { handleViewPdf(record) }
-                            })}
-                            rowClassName={(record) => record.TrangThai === 'Chưa xem' ? style.notViewed : ''}
-                        />
-                    </Card>
+                    <Table
+                        className={style.tableVersions}
+                        columns={expandColumns}
+                        dataSource={modalData?.subItems || []} // Thay documentModalData thành modalData
+                        pagination={true}
+                        onRow={(record) => ({
+                            onClick: () => { handleViewPdf(record) }
+                        })}
+                        rowClassName={(record) => record.TrangThai === 'Chưa xem' ? style.notViewed : ''}
+                    />
                 </Modal>
                 <Modal
                     title={modalTaiLieuTitle}
@@ -681,7 +678,6 @@ const QLTL_Ikea = () => {
                     ]}
                     className={style.modalVersions}
                     width="90%"
-                    style={{ backgroundColor: '#ffffff' }}
                 >
                     <Table
                         dataSource={modalVersionData}
