@@ -1289,6 +1289,7 @@ const Admin_SP_Ikea = () => {
                             columns={expandColumns}
                             dataSource={modalData?.subItems || []} // Thay documentModalData thành modalData
                             pagination={false}
+                            scroll={{ y: 55 * 9 }}
                             onRow={(record) => ({
                                 onClick: () => { handleViewPdf(record) }
                             })}

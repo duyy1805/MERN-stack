@@ -830,7 +830,7 @@ const Admin = () => {
     const departmentOrder = [
         "B1 (Phòng KH-KD)", "B2 (Phòng TC-LĐ)", "B3 (Phòng Vật tư)", "B4 (Phòng TC-KT)", "B5 (Phòng Chính trị)",
         "B6 (Phòng HC-HC)", "B7 (Phòng KT-CN)", "B8 (Phòng Kiểm nghiệm)", "B9 (Phòng Cơ điện)",
-        "Ban CNTT", "Ban QLHT", "Ban NCPT"
+        "Ban CNTT", "Ban QLHT", "Ban NCPT", "CSKH", "ĐT-XDCB", "AT BHLD"
     ];
     const boPhanOptions = uniqueBoPhan.map(bp => ({
         value: bp,

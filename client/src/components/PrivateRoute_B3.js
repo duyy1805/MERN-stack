@@ -50,8 +50,8 @@ const PrivateRoute_B3 = ({ component: Component, rolesAllowed, ...rest }) => {
                             to={
                                 role === "admin"
                                     ? "/B3/pxvt"
-                                    : role === "user"
-                                        ? "/B3"
+                                    : role === "admin_b4"
+                                        ? "/B3/B4kyphieu"
                                         : "/B3"
                             }
                         />

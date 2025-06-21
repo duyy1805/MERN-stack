@@ -4,7 +4,7 @@ import {
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import moment from 'moment';
-
+import apiConfig from '../../apiConfig.json';
 function ProductionPlan() {
     const [data, setData] = useState([]);
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -15,7 +15,7 @@ function ProductionPlan() {
     // Lấy danh sách kế hoạch & tổ đã được gán
     const fetchData = async () => {
         try {
-            const response = await axios.get("https://apipccc.z76.vn/api/TAG_QLSX/getkehoachngay");
+            const response = await axios.get(`${apiConfig.API_BASE_URL}/api/TAG_QLSX/getkehoachngay`);
             const list = response.data.sort((a, b) => new Date(a.ngayDongBo) - new Date(b.ngayDongBo));
             setData(list);
         } catch (error) {
@@ -75,33 +75,54 @@ function ProductionPlan() {
             title: 'Thao tác',
             key: 'action',
             render: (_, record) => (
-                <Button onClick={() => {
-                    setSelectedRow(record);
-                    setIsModalVisible(true);
-                    const found = assignedToList.find(x => x.ID_KeHoachSanXuat === record.ID_KeHoachSanXuat);
-                    setSelectedTo(found?.ToSanXuat || '');
-                }}>Gán tổ</Button>
+                <>
+                    <Button
+                        style={{ marginRight: 8 }}
+                        onClick={() => {
+                            setSelectedRow(record);
+                            setIsModalVisible(true);
+                            setSelectedTo(record.ToSanXuat || '');
+                        }}
+                    >
+                        Gán tổ
+                    </Button>
+
+                    {record.ToSanXuat && (
+                        <Button danger onClick={() => handleRemoveTo(record)}>
+                            Xóa tổ
+                        </Button>
+                    )}
+                </>
             )
         }
     ];
+    const handleRemoveTo = async (record) => {
+        try {
+            const response = await axios.post(`${apiConfig.API_BASE_URL}/api/TAG_QLSX/insert-or-update-kehoach-cnpn`, {
+                ID_KeHoachSanXuat: record.ID_KeHoachSanXuat,
+                ToSanXuat: ''  // hoặc null, tuỳ cách backend xử lý
+            });
+
+            if (response.data.success) {
+                message.success('Đã xóa tổ sản xuất khỏi kế hoạch.');
+                fetchData(); // Cập nhật lại bảng
+            } else {
+                message.error('Xóa tổ thất bại.');
+            }
+        } catch (error) {
+            console.error('Lỗi khi gọi API:', error);
+            message.error('Lỗi máy chủ.');
+        }
+    };
 
     const handleOk = async () => {
-        if (!selectedTo) {
-            message.warning('Vui lòng chọn tổ sản xuất!');
-            return;
-        }
-
-        const isUsedByOther = assignedToList.some(x =>
-            x.ToSanXuat === selectedTo && x.ID_KeHoachSanXuat !== selectedRow.ID_KeHoachSanXuat
-        );
-
-        if (isUsedByOther) {
-            message.error('Tổ sản xuất đã được gán cho kế hoạch khác!');
-            return;
-        }
+        // if (!selectedTo) {
+        //     message.warning('Vui lòng chọn tổ sản xuất!');
+        //     return;
+        // }
 
         try {
-            const response = await axios.post('https://apipccc.z76.vn/api/TAG_QLSX/insert-or-update-kehoach-cnpn', {
+            const response = await axios.post(`${apiConfig.API_BASE_URL}/api/TAG_QLSX/insert-or-update-kehoach-cnpn`, {
                 ID_KeHoachSanXuat: selectedRow.ID_KeHoachSanXuat,
                 ToSanXuat: selectedTo
             });
@@ -120,7 +141,7 @@ function ProductionPlan() {
     };
 
     return (
-        <>
+        <div style={{ backgroundColor: '#f0f2f5', height: '100vh', padding: 0 }}>
             <div style={{ padding: 10 }}>
                 <Row gutter={[24, 0]}>
                     <Col span={24}>
@@ -148,6 +169,7 @@ function ProductionPlan() {
                                 : item
                         );
                         setData(updatedData);
+                        handleOk();
                         setIsModalVisible(false);
                         setSelectedTo(null);
                     }
@@ -169,7 +191,7 @@ function ProductionPlan() {
                     </Radio.Group>
                 )}
             </Modal>
-        </>
+        </div>
     );
 }
 

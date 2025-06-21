@@ -1361,6 +1361,7 @@ const Admin_SP = () => {
                                 columns={expandColumns}
                                 dataSource={modalData?.subItems || []} // Thay documentModalData thành modalData
                                 pagination={false}
+                                scroll={{ y: 55 * 9 }}
                                 onRow={(record) => ({
                                     onClick: () => { handleViewPdf(record) }
                                 })}
@@ -1384,6 +1385,7 @@ const Admin_SP = () => {
                                 ]}
                                 dataSource={modalData?.subItems_?.length ? modalData.subItems_ : []}
                                 pagination={false}
+                                scroll={{ y: 55 * 9 }}
                                 onRow={(record) => ({
                                     onClick: () => { handleViewPdf(record) }
                                 })}

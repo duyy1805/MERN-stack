@@ -17,7 +17,7 @@ const CNPN_CM2 = () => {
     const [plan, setPlan] = useState()
     const [dsLoi, setDsLoi] = useState([]);
 
-    const socket = io("http://192.168.88.93:3500");
+    const socket = io("http://27.71.231.202:3500");
     useEffect(() => {
         if (!dailyTarget) return; // Nếu dailyTarget chưa có dữ liệu thì không cần tính
 
@@ -79,7 +79,7 @@ const CNPN_CM2 = () => {
         fetchData();
     }, [plan]);
     useEffect(() => {
-        socket.on("updateCount", (data) => {
+        socket.on("updateCount_2", (data) => {
             console.log(data?.counts);
 
             if (!data?.counts || Object.keys(data.counts).length === 0) {
@@ -101,7 +101,7 @@ const CNPN_CM2 = () => {
             }
         });
 
-        return () => socket.off("updateCount");
+        return () => socket.off("updateCount_2");
     }, []);
 
     const LoiTableHorizontal = ({ dsLoi }) => {

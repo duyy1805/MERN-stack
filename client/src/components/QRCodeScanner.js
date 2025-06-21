@@ -63,9 +63,7 @@ export default function QRCodeScanner() {
                 console.error("Lỗi khởi chạy scanner:", err);
             }
         };
-
         startScanning();
-
         return () => {
             if (scanner.isScanning) {
                 scanner.stop().catch(() => { });

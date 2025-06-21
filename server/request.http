@@ -11,8 +11,8 @@ POST http://localhost:5000/auth/register
 Content-Type: application/json
 
 {
-  "username": "b6",
-  "password": "admin"
+  "username": "ngocbinh1",
+  "password": "12345678"
 }
 
 ###

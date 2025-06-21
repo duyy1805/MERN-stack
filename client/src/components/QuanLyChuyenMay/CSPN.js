@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import { UploadOutlined, UserOutlined, VideoCameraOutlined } from '@ant-design/icons';
 import { Layout, Menu, theme, Card, Button } from 'antd';
 import io from "socket.io-client";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import styles from './QLCM.module.css'
 import CNPN_CM1 from "./CNPN_CM1";
+import CNPN_CM2 from "./CNPN_CM2";
 const { Header, Content, Footer, Sider } = Layout;
 
 const App = () => {
@@ -23,9 +23,10 @@ const App = () => {
         try {
             switch (selectedKey) {
                 case "1":
-                case "2":
                 case "3":
                     return <CNPN_CM1 />;
+                case "2":
+                    return <CNPN_CM2 />;
                 default:
                     return <h2>Welcome to Admin Panel</h2>;
             }
